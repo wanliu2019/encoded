@@ -22,6 +22,76 @@
         { "$ref": "file_set.json#/properties" }
     ],
     "dependencies": {
+        "biosample_term_id":{
+            "oneOf": [
+                { 
+                    "properties": {
+                        "biosample_type": {
+                            "enum" : [
+                                "tissue",
+                                "whole organisms"
+                            ]
+                        },
+                        "biosample_term_id":{
+                            "pattern": "^(UBERON|NTR):[0-9]{2,8}$"
+                        }
+                    }
+                },
+                { 
+                    "properties": {
+                        "biosample_type": {
+                            "enum" : [
+                                "primary cell"                               
+                            ]
+                        },
+                        "biosample_term_id":{
+                            "pattern": "^(CL|NTR):[0-9]{2,8}$"
+                        }
+                    }
+                },
+                { 
+                    "properties": {
+                        "biosample_type": {
+                            "enum" : [
+                                "immortalized cell line",
+                                "induced pluripotent stem cell line"                               
+                            ]
+                        },
+                        "biosample_term_id":{
+                            "pattern": "^(EFO|NTR):[0-9]{2,8}$"
+                        }
+                    }
+                },
+                { 
+                    "properties": {
+                        "biosample_type": {
+                            "enum" : [
+                                "stem cell",
+                                "in vitro differentiated cells"                               
+                            ]
+                        },
+                        "biosample_term_id":{
+                            "pattern": "^(CL|EFO|NTR):[0-9]{2,8}$"
+                        }
+                    }
+                }
+            ]
+        },
+        "biosample_type": {
+            "not": {
+                "properties": {
+                    "biosample_type": {
+                        "enum": ["whole organisms"]
+                    },
+                    "organism": {
+                        "linkTo": "Organism",
+                        "linkEnum": [
+                            "7745b647-ff15-4ff3-9ced-b897d4e2983c"
+                        ]
+                    }
+                }
+            }
+        },
         "relevant_timepoint": ["relevant_timepoint_units"],
         "relevant_timepoint_units": ["relevant_timepoint"],
         "status": {
@@ -48,7 +118,7 @@
     },
     "properties": {
         "schema_version": {
-            "default": "8"
+            "default": "16"
         },
         "annotation_type": {
             "title": "Type",
@@ -57,20 +127,20 @@
             "enum": [
                 "binding sites",
                 "blacklist",
+                "candidate regulatory elements",
                 "chromatin state",
-                "enhancer-like regions",
-                "promoter-like regions",
-                "candidate enhancers",
-                "candidate promoters",
-                "enhancer prediction",
-                "DNase master peaks",
-                "transcription factor motifs",
-                "SAGA",
-                "validated enhancers",
-                "overlap",
-                "segmentation",
+                "enhancer predictions",
+                "gene expression",
+                "in vivo enhancer evaluations",
+                "long-range chromatin interactions",
+                "methylation summary",
                 "other",
-                "encyclopedia"
+                "overlap",
+                "representative DNase hypersensitivity sites",
+                "transcript expression",
+                "transcription factor motifs",
+                "validated enhancers",
+                "variant calls"
             ]
         },
         "encyclopedia_version": {
@@ -111,28 +181,28 @@
             "type": "string",
             "enum": [
                 "adult",
-                "unknown",
-                "embryonic",
-                "postnatal",
-                "larva",
-                "first instar larva",
-                "second instar larva",
-                "third instar larva",
-                "wandering third instar larva",
-                "prepupa",
-                "pupa",
+                "dauer",
                 "early embryonic",
-                "midembryonic",
-                "late embryonic",
-                "mixed stage (embryonic)",
-                "mixed stage (late embryonic and L1 larva)",
+                "embryonic",
+                "first instar larva",
                 "L1 larva",
                 "L2 larva",
                 "L2d larva",
                 "L3 larva",
                 "L4 larva",
-                "dauer",
                 "L4/young adult",
+                "larva",
+                "late embryonic",
+                "midembryonic",
+                "mixed stage (embryonic)",
+                "mixed stage (late embryonic and L1 larva)",
+                "postnatal",
+                "prepupa",
+                "pupa",
+                "second instar larva",
+                "third instar larva",
+                "unknown",
+                "wandering third instar larva",
                 "young adult"
             ]
         },
@@ -163,68 +233,77 @@
                 "comment": "See software_version.json for available identifiers.",
                 "linkTo": "SoftwareVersion"
             }
+        },
+        "supersedes": {
+            "title": "Supersedes" ,
+            "description": "The annotation set(s) that this annotation set supersedes by virtue of being newer, better etc. than the one(s) it supersedes.",
+            "type": "array",
+            "default": [],
+            "uniqueItems": true,
+            "items": {
+                    "comment": "See annotation.json for a list of available identifiers.",
+                    "type": "string",
+                    "linkTo": "Annotation"
+            }
         }
     },
     "facets": {
         "annotation_type": {
-            "title": "Annotation type",
-            "type": "string"
+            "title": "Annotation type"
         },
         "files.replicate.experiment.assay_term_name": {
-            "title": "Assay",
-            "type": "string"
+            "title": "Assay"
+        },
+        "files.file_type": {
+            "title": "Available data"
+        },
+        "files.run_type": {
+            "title": "Run type"
+        },
+        "files.read_length": {
+            "title": "Read length (nt)"
+        },
+        "files.mapped_read_length": {
+            "title": "Mapped read length (nt)"
         },
         "status": {
-            "title": "File set status",
-            "type": "string"
+            "title": "File set status"
         },
         "assembly": {
-            "title": "Genome assembly (visualization)",
-            "type": "string"
+            "title": "Genome assembly (visualization)"
         },
         "organism.scientific_name": {
-            "title": "Organism",
-            "type": "string"
+            "title": "Organism"
         },
         "targets.investigated_as": {
-            "title": "Target(s) of assay",
-            "type": "array"
+            "title": "Target(s) of assay"
         },
          "targets.label": {
-            "title": "Target(s) of assay",
-            "type": "array"
+            "title": "Target(s) of assay"
         },
        "biosample_type": {
-            "title": "Biosample type",
-            "type": "string"
+            "title": "Biosample type"
         },
         "organ_slims": {
-            "title": "Organ",
-            "type": "array"
+            "title": "Organ"
         },
         "relevant_life_stage": {
-            "title": "Life stage",
-            "type": "string"
+            "title": "Life stage"
         },
         "month_released": {
-            "title": "Date released",
-            "type": "string"
+            "title": "Date released"
         },
         "software_used.software.name": {
-            "title": "Software used",
-            "type": "array"
+            "title": "Software used"
         },
         "encyclopedia_version": {
-            "title": "Encyclopedia version",
-            "type": "string"
+            "title": "Encyclopedia version"
         },
         "lab.title": {
-            "title": "Lab",
-            "type": "string"
+            "title": "Lab"
         },
         "award.project": {
-            "title": "Project",
-            "type": "string"
+            "title": "Project"
         },
         "award.rfa": {
             "title": "RFA"
@@ -314,6 +393,8 @@
         "organism.name": 1.0,
         "organism.scientific_name": 1.0,
         "organism.taxon_id": 1.0,
-        "annotation_type": 1.0
-    }
+        "annotation_type": 1.0,
+        "internal_tags": 1.0
+    },
+    "changelog": "/profiles/changelogs/annotation.md"
 }

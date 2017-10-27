@@ -11,7 +11,7 @@ var icons = {
 };
 
 
-var SvgIcon = module.exports.SvgIcon = function(icon) {
+var svgIcon = module.exports.svgIcon = function(icon) {
     return icons[icon];
 };
 
@@ -19,20 +19,21 @@ var SvgIcon = module.exports.SvgIcon = function(icon) {
 // Render the icon used to collapse a panel from the title bar.
 //   collapsed: T if the icon should be rendered for the collapsed steate
 //   handlecollapse: function to call when the icon is clicked
-var CollapseIcon = module.exports.CollapseIcon = function(collapsed, addClasses) {
+var collapseIcon = module.exports.collapseIcon = function(collapsed, addClasses) {
     return (
         <svg className={'collapsing-title-control' + (addClasses ? ' ' + addClasses : '')} data-name="Collapse Icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
             {collapsed ?
                 <g>
                     <title>Panel collapsed</title>
                     <circle className="bg" cx="256" cy="256" r="240" />
-                    <polyline className="arrow" points="376.74 197.47 256 314.53 135.26 197.47" />
+                    <line className="content-line" x1="151.87" y1="256" x2="360.13" y2="256" />
+                    <line className="content-line" x1="256" y1="151.87" x2="256" y2="360.13" />
                 </g>
             :
                 <g>
                     <title>Panel open</title>
                     <circle className="bg" cx="256" cy="256" r="240" />
-                    <polyline className="arrow" points="135.26 314.53 256 197.47 376.74 314.53" />
+                    <line className="content-line" x1="151.87" y1="256" x2="360.13" y2="256" />
                 </g>
             }
         </svg>

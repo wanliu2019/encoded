@@ -1,50 +1,41 @@
-'use strict';
-var React = require('react');
-var cloneWithProps = require('react/lib/cloneWithProps');
-var parseAndLogError = require('./mixins').parseAndLogError;
-var globals = require('./globals');
-var ga = require('google-analytics');
-var _ = require('underscore');
+import React from 'react';
+import PropTypes from 'prop-types';
+import _ from 'underscore';
+import * as globals from './globals';
 
 
-var Param = module.exports.Param = React.createClass({
-    contextTypes: {
-        fetch: React.PropTypes.func,
-        session: React.PropTypes.object
-    },
-
-    getDefaultProps: function() {
-        return {type: 'json'};
-    },
-
-    getInitialState: function () {
-        return {
+export class Param extends React.Component {
+    constructor() {
+        super();
+        this.state = {
             fetchedRequest: undefined,
         };
-    },
+        this.receive = this.receive.bind(this);
+        this.fetch = this.fetch.bind(this);
+    }
 
-    componentDidMount: function () {
+    componentDidMount() {
         this.fetch(this.props.url);
-    },
+    }
 
-    componentWillUnmount: function () {
-        var xhr = this.state.fetchedRequest;
+    componentWillReceiveProps(nextProps, nextContext) {
+        if (!this.state.fetchedRequest && nextProps.url === undefined) return;
+        if (this.state.fetchedRequest &&
+            nextProps.url === this.props.url &&
+            _.isEqual(nextContext.session, this.context.session)) return;
+        this.fetch(nextProps.url);
+    }
+
+    componentWillUnmount() {
+        const xhr = this.state.fetchedRequest;
         if (xhr) {
             console.log('abort param xhr');
             xhr.abort();
         }
-    },
+    }
 
-    componentWillReceiveProps: function (nextProps, nextContext) {
-        if (!this.state.fetchedRequest && nextProps.url === undefined) return;
-        if (this.state.fetchedRequest &&
-            nextProps.url === this.props.url &&
-            nextContext.session === this.context.session) return;
-        this.fetch(nextProps.url);
-    },
-
-    fetch: function (url) {
-        var request = this.state.fetchedRequest;
+    fetch(url) {
+        let request = this.state.fetchedRequest;
         if (request) request.abort();
 
         if (!url) {
@@ -56,78 +47,114 @@ var Param = module.exports.Param = React.createClass({
         // XXX Errors should really result in a separate component being rendered.
         if (this.props.type === 'json') {
             request = this.context.fetch(url, {
-                headers: {'Accept': 'application/json'}
+                headers: { Accept: 'application/json' },
             });
-            request.then(response => {
+            request.then((response) => {
                 if (!response.ok) throw response;
                 return response.json();
             })
-            .catch(parseAndLogError.bind(undefined, 'fetchedRequest'))
+            .catch(globals.parseAndLogError.bind(undefined, 'fetchedRequest'))
             .then(this.receive);
         } else if (this.props.type === 'text') {
             request = this.context.fetch(url);
-            request.then(response => {
+            request.then((response) => {
                 if (!response.ok) throw response;
                 return response.text();
             })
-            .catch(parseAndLogError.bind(undefined, 'fetchedRequest'))
+            .catch(globals.parseAndLogError.bind(undefined, 'fetchedRequest'))
             .then(this.receive);
         } else if (this.props.type === 'blob') {
             request = this.context.fetch(url);
-            request.then(response => {
+            request.then((response) => {
                 if (!response.ok) throw response;
                 return response.blob();
             })
-            .catch(parseAndLogError.bind(undefined, 'fetchedRequest'))
+            .catch(globals.parseAndLogError.bind(undefined, 'fetchedRequest'))
             .then(this.receive);
         } else {
-            throw "Unsupported type: " + this.props.type;
+            throw new Error(`Unsupported type: ${this.props.type}`);
         }
 
         this.setState({
-            fetchedRequest: request
+            fetchedRequest: request,
         });
-    },
+    }
 
-    receive: function (data) {
-        var result = {};
+    receive(data) {
+        const result = {};
         result[this.props.name] = data;
         if (this.props.etagName) {
             result[this.props.etagName] = this.state.fetchedRequest.etag;
         }
         this.props.handleFetch(result);
-    },
+    }
 
-    render: function() { return null; }
-});
+    render() {
+        return null;
+    }
+}
+
+Param.propTypes = {
+    url: PropTypes.string.isRequired,
+    handleFetch: PropTypes.func, // Actually required, but added in cloneElement
+    type: PropTypes.string,
+    name: PropTypes.string.isRequired,
+    etagName: PropTypes.string,
+};
+
+Param.defaultProps = {
+    type: 'json',
+    etagName: undefined,
+    handleFetch: undefined, // Actually required, but added in cloneElement
+};
+
+Param.contextTypes = {
+    fetch: PropTypes.func,
+    session: PropTypes.object,
+};
 
 
-var FetchedData = module.exports.FetchedData = React.createClass({
-    contextTypes: {
-        session: React.PropTypes.object
-    },
+export class FetchedData extends React.Component {
+    constructor() {
+        super();
+        this.state = {};
+        this.componentMounted = false;
+        this.handleFetch = this.handleFetch.bind(this);
+    }
 
-    getInitialState: function() {
-        // One state per <Param> child component, keyed by "name" with a value of search results from server
-        return {};
-    },
+    componentDidMount() {
+        // Need to keep track of whether FetchedData is mounted or not, because `handleFetch` can
+        // get called after it has unmounted. I (forresttanaka) had used an abort callback from
+        // <Param> to control whether `handleFetch` set the state or not, but I didn't add a way
+        // to reset the aborted state. For Redmine #5126, I changed to just keeping track of the
+        // mounted state of <FetchedData>. The abort tracking caused the forms page to hang when
+        // you drop down an embedded form. This comment applies to
+        // <FetchedData>.componentWillUnmount as well.
+        this.componentMounted = true;
+    }
 
-    handleFetch: function(result) {
-        // Set state to returned search result data to cause rerender of child components
-        this.setState(result);
-    },
+    componentWillUnmount() {
+        this.componentMounted = false;
+    }
 
-    render: function () {
-        var params = [];
-        var communicating = false;
-        var children = [];
+    handleFetch(result) {
+        // Set state to returned search result data to cause rerender of child components.
+        if (this.componentMounted) {
+            this.setState(result);
+        }
+    }
+
+    render() {
+        const params = [];
+        let communicating = false;
+        const children = [];
 
         // Collect <Param> and non-<Param> child components into appropriate arrays
         if (this.props.children) {
-            React.Children.forEach(this.props.children, child => {
-                if (child.type === Param.type) {
+            React.Children.forEach(this.props.children, (child) => {
+                if (child && child.type === Param) {
                     // <Param> child component; add to array of <Param> child components with this.props.key of its name and calling `handleFetch`
-                    params.push(cloneWithProps(child, {
+                    params.push(React.cloneElement(child, {
                         key: child.props.name,
                         handleFetch: this.handleFetch,
                     }));
@@ -135,8 +162,8 @@ var FetchedData = module.exports.FetchedData = React.createClass({
                     // Still communicating with server if handleFetch not yet called
                     if (this.state[child.props.name] === undefined) {
                         communicating = true;
-                    }                    
-                } else {
+                    }
+                } else if (child) {
                     // Some non-<Param> child; just push it unmodified onto `children` array
                     children.push(child);
                 }
@@ -152,22 +179,23 @@ var FetchedData = module.exports.FetchedData = React.createClass({
         if (!this.context.session) {
             return (
                 <div className="communicating">
-                    <div className="loading-spinner"></div>
+                    <div className="loading-spinner" />
                 </div>
             );
         }
 
         // Detect whether a <Param> component returned an "Error" @type object
-        var errors = params.map(param => this.state[param.props.name])
+        const errors = params.map(param => this.state[param.props.name])
             .filter(obj => obj && (obj['@type'] || []).indexOf('Error') > -1);
 
         // If we got an error, display the error string on the web page
-        if (!this.props.ignoreErrors && errors.length) {
+        if (errors.length) {
+            // Render whatever error we got back from the server on the page.
             return (
                 <div className="error done">
-                    {errors.map(error => {
-                        var ErrorView = globals.content_views.lookup(error);
-                        return <ErrorView {...this.props} context={error} />;
+                    {errors.map((error, i) => {
+                        const ErrorView = globals.contentViews.lookup(error);
+                        return <ErrorView key={i} {...this.props} context={error} />;
                     })}
                 </div>
             );
@@ -177,7 +205,7 @@ var FetchedData = module.exports.FetchedData = React.createClass({
         if (communicating) {
             return (
                 <div className="communicating">
-                    <div className="loading-spinner"></div>
+                    <div className="loading-spinner" />
                     {params}
                 </div>
             );
@@ -186,35 +214,45 @@ var FetchedData = module.exports.FetchedData = React.createClass({
         // Successfully got data. Display in the web page
         return (
             <div className="done">
-                {children.map((child, i) => cloneWithProps(child, _.extend({key: i}, this.props, this.state)))}
+                {children.map((child, i) => React.cloneElement(child, _.extend({ key: i }, this.props, this.state)))}
                 {params}
             </div>
         );
     }
-});
+}
+
+FetchedData.contextTypes = {
+    session: PropTypes.object,
+};
+
+FetchedData.propTypes = {
+    children: PropTypes.node.isRequired,
+};
 
 
-var Items = React.createClass({
+const Items = (props) => {
+    const { Component, data } = props;
+    const items = data ? data['@graph'] : [];
+    return <Component {...props} items={items} total={data.total} />;
+};
 
-    render: function() {
-        var Component = this.props.Component;
-        var data = this.props.data;
-        var items = data ? data['@graph'] : [];
-        return <Component {...this.props} items={items} total={data.total} />;
-    }
+Items.propTypes = {
+    Component: PropTypes.func.isRequired,
+    data: PropTypes.object,
+};
 
-});
+Items.defaultProps = {
+    data: undefined,
+};
 
 
-var FetchedItems = module.exports.FetchedItems = React.createClass({
-    
-    render: function() {
-        return (
-            <FetchedData ignoreErrors={this.props.ignoreErrors}>
-                <Param name="data" url={this.props.url} />
-                <Items {...this.props} />
-            </FetchedData>
-        );
-    }
+export const FetchedItems = props => (
+    <FetchedData>
+        <Param name="data" url={props.url} />
+        <Items {...props} />
+    </FetchedData>
+);
 
-});
+FetchedItems.propTypes = {
+    url: PropTypes.string.isRequired,
+};

@@ -3,9 +3,7 @@ from .features.conftest import app_settings, app, workbook
 from webob.multidict import MultiDict
 import pytest
 
-
 # Integration tests
-
 
 def test_search_view(workbook, testapp):
     res = testapp.get('/search/').json
@@ -65,7 +63,6 @@ def test_matrix_view(workbook, testapp):
 
 
 # Unit tests
-
 
 class FakeRequest(object):
     path = '/search/'

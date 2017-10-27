@@ -1,21 +1,29 @@
-'use strict';
-var React = require('react');
-var doctype = '<!DOCTYPE html>\n';
-var transformResponse = require('subprocess-middleware').transformResponse;
-var fs = require('fs');
-var inline = fs.readFileSync(__dirname + '/../build/inline.js').toString();
+/* global __dirname */
+const React = require('react');
+const ReactDOMServer = require('react-dom/server');
+const transformResponse = require('subprocess-middleware').transformResponse;
+const fs = require('fs');
+const path = require('path');
 
-var render = function (Component, body, res) {
-    //var start = process.hrtime();
-    var context = JSON.parse(body);
-    var props = {
+// Retrieve the file containing webpack build statistics and get the generated CSS hashed file
+// names so we can later write it to the <link rel="stylesheet"> tag.
+const buildFiles = JSON.parse(fs.readFileSync(path.join(__dirname, '/../build/stats.json'))).assetsByChunkName.style;
+const doctype = '<!DOCTYPE html>\n';
+const inline = fs.readFileSync(path.join(__dirname, '/../build/inline.js')).toString();
+
+function render(Component, body, res) {
+    // Search for the hashed CSS file name in the buildFiles list
+    const cssFile = buildFiles.find(file => !!file.match(/^\.\/css\/style(\.[0-9a-z]+){0,1}\.css$/));
+    const context = JSON.parse(body);
+    const props = {
         context: context,
         href: res.getHeader('X-Request-URL') || context['@id'],
-        inline: inline
+        inline: inline,
+        styles: `/static/build/${cssFile}`,
     };
-    var markup;
+    let markup;
     try {
-        markup = React.renderToString(<Component {...props} />);
+        markup = ReactDOMServer.renderToString(<Component {...props} />);
     } catch (err) {
         props.context = {
             '@type': ['RenderingError', 'error'],
@@ -26,18 +34,16 @@ var render = function (Component, body, res) {
             detail: err.stack,
             log: console._stdout.toString(),
             warn: console._stderr.toString(),
-            context: context
+            context: context,
         };
         // To debug in browser, pause on caught exceptions:
         //   app.setProps({context: app.props.context.context})
         res.statusCode = 500;
-        markup = React.renderToString(<Component {...props} />);
+        markup = ReactDOMServer.renderToString(<Component {...props} />);
     }
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    //var duration = process.hrtime(start);
-    //res.setHeader('X-React-duration', duration[0] * 1e6 + (duration[1] / 1000 | 0));
     return new Buffer(doctype + markup);
-};
+}
 
 
 module.exports.build = function (Component) {

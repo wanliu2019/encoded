@@ -27,11 +27,26 @@
         "accession": {
             "accessionType": "SR"
         },
+        "alternate_accessions": {
+            "title": "Alternate accessions",
+            "description": "Accessions previously assigned to objects that have been merged with this object.",
+            "comment": "Do not submit. Only admins are allowed to set or update this value.",
+            "type": "array",
+            "default": [],
+            "permission": "import_items",
+            "items": {
+                "title": "Alternate Accession",
+                "description": "An accession previously assigned to an object that has been merged with this object.",
+                "comment": "Only accessions of objects that have status equal replaced will work here.",
+                "type": "string",
+                "format": "accession",
+                "pattern": "^(ENCSR\\d{3}[A-Z]{3})$|^(TSTSR\\d{6})$"
+            }
+        },
         "description": {
             "title": "Description",
             "description": "A plain text description of the dataset.",
             "type": "string",
-            "default": "",
             "elasticsearch_mapping_index_type": {
                 "title": "Field mapping index type",
                 "description": "Defines one of three types of indexing available",
@@ -42,19 +57,20 @@
                     "not_analyzed",
                     "no"
                 ]
-            }
+            },
+            "pattern": "^(\\S+(\\s|\\S)*\\S+|\\S)$|^$"
         },
         "dbxrefs": {
             "@type": "@id",
             "rdfs:subPropertyOf": "rdfs:seeAlso",
             "title": "External identifiers",
-            "description": "Unique identifiers from external resources.",
+            "description": "Identifiers from external resources that may have 1-to-1 or 1-to-many relationships with ENCODE objects.",
             "type": "array",
             "default": [],
             "uniqueItems": true,
             "items": {
                 "title": "External identifier",
-                "description": "A unique identifier from external resource.",
+                "description": "Identifier from an external resource that may have 1-to-1 or 1-to-many relationships with ENCODE objects.",
                 "type":  "string",
                 "pattern": "^((UCSC-GB-mm9|UCSC-GB-hg19):\\S+|GEO:(GSM|GSE)\\d+|UCSC-ENCODE-mm9:wgEncodeEM\\d+|UCSC-ENCODE-hg19:wgEncodeEH\\d+|IHEC:IHECRE\\d{8}\\.\\d)$"
             }
@@ -69,25 +85,41 @@
             ],
             "permission": "import_items"
         },
+        "internal_tags": {
+            "title": "Internal tags",
+            "description": "Some datasets are part of particular data collections",
+            "type": "array",
+            "permission": "import_items",
+            "uniqueItems": true,
+            "default": [],
+            "items": {
+                "type": "string",
+                "enum": [
+                    "cre_inputv10",
+                    "cre_inputv11",
+                    "dbGaP",
+                    "DREAM",
+                    "ENCYCLOPEDIAv3",
+                    "ENCYCLOPEDIAv4",
+                    "ENCORE",
+                    "ENTEx",
+                    "SESCC"
+                ]
+            }
+        },
         "status": {
             "title": "Status",
             "type": "string",
-            "default": "proposed",
+            "default": "started",
             "enum" : [
-                "proposed",
                 "started",
-                "in progress",
                 "submitted",
                 "ready for review",
-                "deleted",
                 "released",
-                "revoked",
                 "archived",
+                "deleted",
                 "replaced",
-                "in review",
-                "release ready",
-                "verified",
-                "preliminary"
+                "revoked"
             ]
         }
     },
@@ -147,6 +179,8 @@
         "files.file_format": 1.0,
         "files.output_type": 1.0,
         "files.md5sum": 1.0,
-        "references.title": 1.0
-    }
+        "references.title": 1.0,
+        "internal_tags": 1.0
+    },
+    "changelog": "/profiles/changelogs/dataset.md"
 }

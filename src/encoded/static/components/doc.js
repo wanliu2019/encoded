@@ -1,14 +1,12 @@
-'use strict';
-var React = require('react');
-var _ = require('underscore');
-var url = require('url');
-var panel = require('../libs/bootstrap/panel');
-var {SvgIcon, CollapseIcon} = require('../libs/svg-icons');
-var globals = require('./globals');
-var image = require('./image');
-
-var {Panel, PanelHeading, PanelBody} = panel;
-var Attachment = image.Attachment;
+import React from 'react';
+import PropTypes from 'prop-types';
+import _ from 'underscore';
+import url from 'url';
+import { Panel, PanelHeading, PanelBody } from '../libs/bootstrap/panel';
+import { collapseIcon } from '../libs/svg-icons';
+import { FetchedData, Param } from './fetched';
+import * as globals from './globals';
+import { Attachment } from './image';
 
 const EXCERPT_LENGTH = 80; // Maximum number of characters in an excerpt
 
@@ -22,13 +20,13 @@ const EXCERPT_LENGTH = 80; // Maximum number of characters in an excerpt
 // <DocumentsPanel> property: documentsList
 //
 // This object is mostly an array of arrays. The inner arrays holds the list of documents of one type,
-// while the outer array holds all the types of arrays along with their section titles. Literally though,
-// documentList is an array of objects, including the array of documents and the title to display above
+// while the outer array holds all the types of arrays along with their section label. Literally though,
+// documentList is an array of objects, including the array of documents and the label to display above
 // those documents within the panel.
 //
 // [
 //     {
-//         title: 'Section title',
+//         label: 'document label',
 //         documents: array of document objects
 //     },
 //     {
@@ -36,323 +34,416 @@ const EXCERPT_LENGTH = 80; // Maximum number of characters in an excerpt
 //     }
 // ]
 
-var DocumentsPanel = module.exports.DocumentsPanel = React.createClass({
-    propTypes: {
-        documentSpecs: React.PropTypes.array.isRequired, // List of document arrays and their titles
-        title: React.PropTypes.string // Title of the document panel
-    },
+export const DocumentsPanel = (props) => {
+    // Filter documentSpecs to just those that have actual documents in them.
+    const documentSpecsMapped = props.documentSpecs.length && _.compact(props.documentSpecs.map(documentSpecs => (
+        documentSpecs.documents.length ? documentSpecs : null
+    )));
 
-    render: function() {
-        var documentSpecs = this.props.documentSpecs.length && _.compact(this.props.documentSpecs.map(documentSpecs => {
-            return documentSpecs.documents.length ? documentSpecs : null;
-        }));
+    // Concatenate all documents, and map their UUIDs to corresponding labels
+    let allDocs = [];
+    const docLabelMap = {};
+    documentSpecsMapped.forEach((spec) => {
+        spec.documents.forEach((doc) => {
+            docLabelMap[doc.uuid] = spec.label;
+        });
+        allDocs = allDocs.concat(spec.documents);
+    });
 
-        if (documentSpecs.length) {
-            return (
-                <div>
-                    <Panel addClasses="clearfix">
-                        <PanelHeading>
-                            <h4>{this.props.title ? <span>{this.props.title}</span> : <span>Documents</span>}</h4>
-                        </PanelHeading>
-                        {documentSpecs.map((documentSpec, i) => {
-                            if (documentSpec.documents.length) {
-                                return (
-                                    <PanelBody key={i} addClasses="panel-body-doc">
-                                        <DocumentsSubpanels documentSpec={documentSpec} />
-                                    </PanelBody>
-                                );
-                            }
-                            return null;
-                        })}
-                    </Panel>
-                </div>
-            );
-        }
-        return null;
-    }
-});
+    // Sort documents by attachment download name.
+    const sortedDocs = globals.sortDocs(allDocs);
 
-
-var DocumentsSubpanels = module.exports.DocumentsSubpanels = React.createClass({
-    propTypes: {
-        documentSpec: React.PropTypes.object.isRequired // List of document arrays and their titles
-    },
-
-    render: function() {
-        var documentSpec = this.props.documentSpec;
-
+    if (documentSpecsMapped.length) {
         return (
             <div>
-                {documentSpec.title ? <h4>{documentSpec.title}</h4> : null}
-                <div className="row multi-columns-row">
-                    {documentSpec.documents.map(doc => {
-                        var PanelView = globals.panel_views.lookup(doc);
-                        return <PanelView key={doc['@id']} context={doc} />;
-                    })}
-                </div>
+                <Panel addClasses="clearfix">
+                    <PanelHeading>
+                        <h4>{props.title ? <span>{props.title}</span> : <span>Documents</span>}</h4>
+                    </PanelHeading>
+                    <PanelBody addClasses="panel-body-doc doc-panel__outer">
+                        <section className="doc-panel__inner">
+                            {sortedDocs.map((doc) => {
+                                const PanelView = globals.panelViews.lookup(doc);
+                                return <PanelView key={doc['@id']} label={docLabelMap[doc.uuid]} context={doc} />;
+                            })}
+                        </section>
+                    </PanelBody>
+                </Panel>
             </div>
         );
     }
-});
+    return null;
+};
+
+DocumentsPanel.propTypes = {
+    documentSpecs: PropTypes.array.isRequired, // List of document arrays and their titles
+    title: PropTypes.string, // Title of the document panel
+};
+
+DocumentsPanel.defaultProps = {
+    title: '',
+};
+
+
+// Called when a GET request for all the documents associated with a dataset returns with the
+// array of matching documents.
+const DocumentsPanelRenderer = (props) => {
+    const documents = props.documentSearch['@graph'];
+    if (documents && documents.length) {
+        return <DocumentsPanel documentSpecs={[{ documents }]} />;
+    }
+    return null;
+};
+
+DocumentsPanelRenderer.propTypes = {
+    documentSearch: PropTypes.object, // Search result object; this uses its @graph to get the documents,
+};
+
+DocumentsPanelRenderer.defaultProps = {
+    documentSearch: null,
+};
+
+
+// Perform a GET request on the array of document @ids passed in the `documents` property, and
+// display the resulting documents in a documents panel.
+export const DocumentsPanelReq = (props) => {
+    const { documents } = props;
+
+    if (documents && documents.length) {
+        return (
+            <FetchedData>
+                <Param name="documentSearch" url={`/search/?type=Item&${documents.map(docAtId => `@id=${docAtId}`).join('&')}`} />
+                <DocumentsPanelRenderer />
+            </FetchedData>
+        );
+    }
+    return null;
+};
+
+DocumentsPanelReq.propTypes = {
+    documents: PropTypes.array.isRequired, // Array of document @ids to request and render
+};
+
+
+export const DocumentsSubpanels = (props) => {
+    const documentSpec = props.documentSpec;
+
+    return (
+        <div>
+            <div className="panel-docs-list">
+                {documentSpec.documents.map((doc) => {
+                    const PanelView = globals.panelViews.lookup(doc);
+                    return <PanelView key={doc['@id']} label={documentSpec.label} context={doc} />;
+                })}
+            </div>
+        </div>
+    );
+};
+
+DocumentsSubpanels.propTypes = {
+    documentSpec: PropTypes.object.isRequired, // List of document arrays and their titles
+};
 
 
 // Display a single document within a <DocumentPanel>. This routine requires that you register display components for each
 // of the five major parts of a single document panel. See globals.js for a guide to the parts.
-var Document = module.exports.Document = React.createClass({
-    getInitialState: function() {
-        return {panelOpen: false};
-    },
+export class Document extends React.Component {
+    constructor() {
+        super();
+        this.state = {
+            panelOpen: false,
+        };
+
+        // Bind non-React methods to this.
+        this.handleClick = this.handleClick.bind(this);
+    }
 
     // Clicking the Lab bar inverts visible state of the popover
-    handleClick: function(e) {
+    handleClick(e) {
         e.preventDefault();
         e.stopPropagation();
 
         // Tell parent (App component) about new popover state
         // Pass it this component's React unique node ID
-        this.setState({panelOpen: !this.state.panelOpen});
-    },
+        this.setState(prevState => ({
+            panelOpen: !prevState.panelOpen,
+        }));
+    }
 
-    render: function() {
-        var context = this.props.context;
+    render() {
+        const context = this.props.context;
 
         // Set up rendering components
-        var DocumentHeaderView = globals.document_views.header.lookup(context);
-        var DocumentCaptionView = globals.document_views.caption.lookup(context);
-        var DocumentPreviewView = globals.document_views.preview.lookup(context);
-        var DocumentFileView = globals.document_views.file.lookup(context);
-        var DocumentDetailView = globals.document_views.detail.lookup(context);
+        const DocumentHeaderView = globals.documentViews.header.lookup(context);
+        const DocumentCaptionView = globals.documentViews.caption.lookup(context);
+        const DocumentPreviewView = globals.documentViews.preview.lookup(context);
+        const DocumentFileView = globals.documentViews.file.lookup(context);
+        const DocumentDetailView = globals.documentViews.detail.lookup(context);
 
         return (
-            // Each section is a panel; name all Bootstrap 3 sizes so .multi-columns-row class works
-            <section className="col-xs-12 col-sm-6 col-md-6 col-lg-4">
-                <Panel addClasses={globals.itemClass(context, 'view-detail')}>
-                    <DocumentHeaderView doc={context} />
-                    <PanelBody>
-                        <div className="document-header">
-                            <DocumentPreviewView doc={context} />
-                            <DocumentCaptionView doc={context} />
-                        </div>
-                        <DocumentFileView doc={context} detailOpen={this.state.panelOpen} detailSwitch={this.handleClick} />
-                        <DocumentDetailView doc={context} detailOpen={this.state.panelOpen} key={this.props.key} />
-                    </PanelBody>
+            <section className="flexcol flexcol--doc">
+                <Panel addClasses={globals.itemClass(context, 'document')}>
+                    <DocumentHeaderView doc={context} label={this.props.label} />
+                    <div className="document__intro">
+                        <DocumentCaptionView doc={context} />
+                        <DocumentPreviewView doc={context} />
+                    </div>
+                    <DocumentFileView doc={context} detailOpen={this.state.panelOpen} detailSwitch={this.handleClick} />
+                    <DocumentDetailView doc={context} detailOpen={this.state.panelOpen} id={context['@id']} />
                 </Panel>
             </section>
         );
     }
-});
+}
+
+Document.propTypes = {
+    context: PropTypes.object.isRequired, // Document context object to render
+    label: PropTypes.string, // Extra label to add to document type in header
+};
+
+Document.defaultProps = {
+    label: '',
+};
 
 
 // Document header component -- default
-var DocumentHeader = module.exports.DocumentHeader = React.createClass({
-    propTypes: {
-        doc: React.PropTypes.object.isRequired // Document object to render
-    },
+export const DocumentHeader = (props) => {
+    const { doc, label } = props;
 
-    render: function() {
-        var doc = this.props.doc;
+    return (
+        <div className="document__header">
+            {doc.document_type} {label ? <span>{label}</span> : null}
+        </div>
+    );
+};
 
-        return (
-            <div className="panel-header document-title sentence-case">
-                {doc.document_type}
-            </div>
-        );
-    }
-});
+DocumentHeader.propTypes = {
+    doc: PropTypes.object.isRequired, // Document object to render
+    label: PropTypes.string, // Extra label to add to document type in header
+};
+
+DocumentHeader.defaultProps = {
+    label: '',
+};
+
 
 // Document caption component -- default
-var DocumentCaption = module.exports.DocumentCaption = React.createClass({
-    propTypes: {
-        doc: React.PropTypes.object.isRequired // Document object to render
-    },
+export const DocumentCaption = (props) => {
+    const doc = props.doc;
+    const caption = doc.description;
+    let excerpt;
 
-    render: function() {
-        var doc = this.props.doc;
-        var excerpt, caption = doc.description;
-        if (caption && caption.length > EXCERPT_LENGTH) {
-            excerpt = globals.truncateString(caption, EXCERPT_LENGTH);
-        }
-
-        return (
-            <div className="document-intro document-meta-data">
-                {excerpt || caption ?
-                    <div data-test="caption">
-                        <strong>{excerpt ? 'Description excerpt: ' : 'Description: '}</strong>
-                        {excerpt ? <span>{excerpt}</span> : <span>{caption}</span>}
-                    </div>
-                : <em>No description</em>}
-            </div>
-        );
+    if (caption && caption.length > EXCERPT_LENGTH) {
+        excerpt = globals.truncateString(caption, EXCERPT_LENGTH);
     }
-});
+
+    return (
+        <div className="document__caption">
+            {excerpt || caption ?
+                <div data-test="caption">
+                    <strong>{excerpt ? 'Description excerpt: ' : 'Description: '}</strong>
+                    {excerpt ? <span>{excerpt}</span> : <span>{caption}</span>}
+                </div>
+            : <em>No description</em>}
+        </div>
+    );
+};
+
+DocumentCaption.propTypes = {
+    doc: PropTypes.object.isRequired, // Document object to render
+};
+
 
 // Document preview component -- default
-var DocumentPreview = module.exports.DocumentPreview = React.createClass({
-    propTypes: {
-        doc: React.PropTypes.object.isRequired // Document object to render
-    },
+export const DocumentPreview = props => (
+    <figure className="document__preview">
+        <Attachment context={props.doc} attachment={props.doc.attachment} className="characterization" />
+    </figure>
+);
 
-    render: function() {
-        return (
-            <figure>
-                <Attachment context={this.props.doc} attachment={this.props.doc.attachment} className="characterization" />
-            </figure>
-        );
-    }
-});
+DocumentPreview.propTypes = {
+    doc: PropTypes.object.isRequired, // Document object to render
+};
 
 
 // Document file component -- default
-var DocumentFile = module.exports.DocumentFile = React.createClass({
-    propTypes: {
-        doc: React.PropTypes.object.isRequired, // Document object to render
-        detailOpen: React.PropTypes.bool, // True if detail panel is visible
-        detailSwitch: React.PropTypes.func // Parent component function to call when detail switch clicked
-    },
+export const DocumentFile = (props) => {
+    const { doc, detailOpen, detailSwitch } = props;
 
-    render: function() {
-        var {doc, detailOpen, detailSwitch} = this.props;
-
-        if (doc.attachment && doc.attachment.href && doc.attachment.download) {
-            var attachmentHref = url.resolve(doc['@id'], doc.attachment.href);
-            var dlFileTitle = "Download file " + doc.attachment.download;
-
-            return (
-                <div className="dl-bar">
-                    <i className="icon icon-download"></i>&nbsp;
-                    <a data-bypass="true" title={dlFileTitle} href={attachmentHref} download={doc.attachment.download}>
-                        {doc.attachment.download}
-                    </a>
-                    {detailSwitch ?
-                        <div className="detail-switch">
-                            <a href="#" data-trigger onClick={detailSwitch} className="collapsing-doc">
-                                {CollapseIcon(!this.props.detailOpen)}
-                            </a>
-                        </div>
-                    : null}
-                </div>
-            );
-        }
+    if (doc.attachment && doc.attachment.href && doc.attachment.download) {
+        const attachmentHref = url.resolve(doc['@id'], doc.attachment.href);
+        const dlFileTitle = `Download file ${doc.attachment.download}`;
 
         return (
-            <div className="dl-bar">
-                <em>Document not available</em>
+            <div className="document__file">
+                <div className="document__file-name">
+                    <i className="icon icon-download document__file-name-icon" />
+                    <a data-bypass="true" className="document__file-name-link" title={dlFileTitle} href={attachmentHref} download={doc.attachment.download}>
+                        {doc.attachment.download}
+                    </a>
+                </div>
+                {detailSwitch ?
+                    <button data-trigger onClick={detailSwitch} className="document__file-detail-switch">
+                        {collapseIcon(!detailOpen)}
+                    </button>
+                : null}
             </div>
         );
     }
-});
+
+    return (
+        <div className="dl-bar">
+            <em>Document not available</em>
+        </div>
+    );
+};
+
+DocumentFile.propTypes = {
+    doc: PropTypes.object.isRequired, // Document object to render
+    detailOpen: PropTypes.bool.isRequired, // True if detail panel is visible
+    detailSwitch: PropTypes.func.isRequired, // Parent component function to call when detail switch clicked
+};
 
 
 // Document detail component -- default
-var DocumentDetail = module.exports.DocumentDetail = React.createClass({
-    propTypes: {
-        doc: React.PropTypes.object.isRequired, // Document object to render
-        detailOpen: React.PropTypes.bool, // True if detail panel is visible
-        key: React.PropTypes.string // Unique key for identification
-    },
+const DocumentDetail = (props) => {
+    const doc = props.doc;
+    const keyClass = `document__detail${props.detailOpen ? ' active' : ''}`;
+    const excerpt = doc.description && doc.description.length > EXCERPT_LENGTH;
 
-    render: function() {
-        var doc = this.props.doc;
-        var keyClass = 'document-slider' + (this.props.detailOpen ? ' active' : '');
-        var excerpt = doc.description && doc.description.length > EXCERPT_LENGTH;
-
-        return (
-            <div className={keyClass}>
-                <dl className='key-value-doc' id={'panel' + this.props.key} aria-labeledby={'tab' + this.props.key} role="tabpanel">
-                    {excerpt ?
-                        <div data-test="caption">
-                            <dt>Description</dt>
-                            <dd>{doc.description}</dd>
-                        </div>
-                    : null}
-
-                    {doc.submitted_by && doc.submitted_by.title ?
-                        <div data-test="submitted-by">
-                            <dt>Submitted by</dt>
-                            <dd>{doc.submitted_by.title}</dd>
-                        </div>
-                    : null}
-
-                    <div data-test="lab">
-                        <dt>Lab</dt>
-                        <dd>{doc.lab.title}</dd>
+    return (
+        <div className={keyClass}>
+            <dl className="key-value-doc" id={`panel-${props.id}`} aria-labelledby={`tab-${props.id}`} role="tabpanel">
+                {excerpt ?
+                    <div data-test="caption">
+                        <dt>Description</dt>
+                        <dd>{doc.description}</dd>
                     </div>
+                : null}
 
-                    {doc.award && doc.award.name ?
-                        <div data-test="award">
-                            <dt>Grant</dt>
-                            <dd>{doc.award.name}</dd>
-                        </div>
-                    : null}
-                </dl>
-            </div>
-        );
-    }
-});
+                {doc.submitted_by && doc.submitted_by.title ?
+                    <div data-test="submitted-by">
+                        <dt>Submitted by</dt>
+                        <dd>{doc.submitted_by.title}</dd>
+                    </div>
+                : null}
+
+                <div data-test="lab">
+                    <dt>Lab</dt>
+                    <dd>{doc.lab.title}</dd>
+                </div>
+
+                {doc.award && doc.award.name ?
+                    <div data-test="award">
+                        <dt>Grant</dt>
+                        <dd><a href={doc.award['@id']}>{doc.award.name}</a></dd>
+                    </div>
+                : null}
+            </dl>
+        </div>
+    );
+};
+
+DocumentDetail.propTypes = {
+    doc: PropTypes.object.isRequired, // Document object to render
+    detailOpen: PropTypes.bool, // True if detail panel is visible
+    id: PropTypes.string, // Unique key for identification
+};
+
+DocumentDetail.defaultProps = {
+    detailOpen: false,
+    id: '',
+};
+
 
 // Register document @types so they display in the standard document panel
-globals.panel_views.register(Document, 'Document');
+globals.panelViews.register(Document, 'Document');
 
 // Register document header rendering components
-globals.document_views.header.register(DocumentHeader, 'Document');
+globals.documentViews.header.register(DocumentHeader, 'Document');
 
 // Register document caption rendering components
-globals.document_views.caption.register(DocumentCaption, 'Document');
+globals.documentViews.caption.register(DocumentCaption, 'Document');
 
 // Register document preview rendering components
-globals.document_views.preview.register(DocumentPreview, 'Document');
+globals.documentViews.preview.register(DocumentPreview, 'Document');
 
 // Register document file rendering components
-globals.document_views.file.register(DocumentFile, 'Document');
+globals.documentViews.file.register(DocumentFile, 'Document');
 
 // Register document detail rendering components
-globals.document_views.detail.register(DocumentDetail, 'Document');
+globals.documentViews.detail.register(DocumentDetail, 'Document');
+
+
+const QCAttachmentCaption = props => (
+    <div className="document__caption">
+        <div data-test="caption">
+            <strong>Attachment: </strong>
+            {props.title}
+        </div>
+    </div>
+);
+
+QCAttachmentCaption.propTypes = {
+    title: PropTypes.string.isRequired, // Title to display for attachment
+};
+
+
+const QCAttachmentPreview = (props) => {
+    const { context, attachment } = props;
+
+    return (
+        <figure className="document__preview">
+            <Attachment context={context} attachment={attachment} className="characterization" />
+        </figure>
+    );
+};
+
+QCAttachmentPreview.propTypes = {
+    context: PropTypes.object.isRequired, // QC metric object that owns the attachment to render
+    attachment: PropTypes.object.isRequired, // Attachment to render
+};
 
 
 // Display a panel for attachments that aren't a part of an associated document
-var AttachmentPanel = module.exports.AttachmentPanel = React.createClass({
-    propTypes: {
-        context: React.PropTypes.object.isRequired, // Object that owns the attachment; needed for attachment path
-        attachment: React.PropTypes.object.isRequired, // Attachment being rendered
-        title: React.PropTypes.string // Title to display in the caption area
-    },
+export const AttachmentPanel = (props) => {
+    const { context, attachment, title, modal } = props;
 
-    render: function() {
-        var {context, attachment, title} = this.props;
+    // Set up rendering components.
+    const DocumentCaptionView = globals.documentViews.caption.lookup(context);
+    const DocumentPreviewView = globals.documentViews.preview.lookup(context);
 
-        // Make the download link
-        var download, attachmentHref;
-        if (attachment.href && attachment.download) {
-            attachmentHref = url.resolve(context['@id'], attachment.href);
-            download = (
-                <div className="dl-link">
-                    <i className="icon icon-download"></i>&nbsp;
-                    <a data-bypass="true" href={attachmentHref} download={attachment.download}>
-                        Download
-                    </a>
+    // Determine the attachment area CSS classes based on whether they're displayed in a modal
+    // or not.
+    const attachmentClasses = `flexcol flexcol--attachment${modal ? '-modal' : ''}`;
+
+    return (
+        <section className={attachmentClasses}>
+            <Panel addClasses={globals.itemClass(context, 'attachment')}>
+                <div className="document__intro document__intro--attachment-only">
+                    <DocumentCaptionView title={title} />
+                    <DocumentPreviewView context={context} attachment={attachment} />
                 </div>
-            );
-        } else {
-            download = <em>Attachment not available to download</em>;
-        }
+            </Panel>
+        </section>
+    );
+};
 
-        return (
-            <section className="col-sm-12 col-md-6">
-                <Panel addClasses={globals.itemClass(context, 'view-detail quality-metric-header')}>
-                    <figure>
-                        <Attachment context={context} attachment={attachment} className="characterization" />
-                    </figure>
-                    <div className="document-intro document-meta-data">
-                        {title ?
-                            <div data-test="attachments">
-                                <strong>Attachment: </strong>
-                                {title}
-                            </div>
-                        : null}
-                        {download}
-                    </div>
-                </Panel>
-            </section>
-        );
-    }
-});
+AttachmentPanel.propTypes = {
+    context: PropTypes.object.isRequired, // Object that owns the attachment; needed for attachment path
+    attachment: PropTypes.object.isRequired, // Attachment being rendered
+    title: PropTypes.string, // Title to display in the caption area
+    modal: PropTypes.bool, // `true` if attachments are displayed in a modal
+};
+
+AttachmentPanel.defaultProps = {
+    title: '',
+    modal: false,
+};
+
+
+// Register document caption rendering components
+globals.documentViews.caption.register(QCAttachmentCaption, 'QualityMetric');
+
+// Register document preview rendering components
+globals.documentViews.preview.register(QCAttachmentPreview, 'QualityMetric');

@@ -1,62 +1,59 @@
-'use strict';
-var React = require('react');
-var fetched = require('../fetched');
-var globals = require('../globals');
-var item = require('./item');
-var noarg_memoize = require('../../libs/noarg-memoize');
-var richtext = require('./richtext');
-var _ = require('underscore');
-
-var ItemBlockView = item.ItemBlockView;
-var ObjectPicker = require('../inputs').ObjectPicker;
-var RichTextBlockView = richtext.RichTextBlockView;
+import React from 'react';
+import PropTypes from 'prop-types';
+import _ from 'underscore';
+import { FetchedData, Param } from '../fetched';
+import * as globals from '../globals';
+import { ObjectPicker } from '../inputs';
+import ItemBlockView from './item';
+import RichTextBlockView from './richtext';
 
 
-var TeaserCore = React.createClass({
-    renderImage: function() {
-        var context = this.props.value.image;
-        if (typeof context === 'object') {
+class TeaserCore extends React.Component {
+    constructor() {
+        super();
+
+        // Bind this to non-React methods.
+        this.renderImage = this.renderImage.bind(this);
+    }
+
+    renderImage() {
+        const context = this.props.value.image;
+        if (context && typeof context === 'object') {
             return <ItemBlockView context={context} />;
         }
         if (typeof context === 'string') {
             return (
-                <fetched.FetchedData>
-                    <fetched.Param name="context" url={context} />
+                <FetchedData>
+                    <Param name="context" url={context} />
                     <ItemBlockView />
-                </fetched.FetchedData>
+                </FetchedData>
             );
         }
         return null;
-    },
+    }
 
-    render: function() {
-        var image = this.props.value.image;
+    render() {
         // Must work with both paths (edit form) and embedded objects (display)
         return (
             <div className="teaser thumbnail clearfix">
                 {this.renderImage()}
-                <div className="caption" dangerouslySetInnerHTML={{__html: this.props.value.body}}></div>
+                <div className="caption" dangerouslySetInnerHTML={{ __html: this.props.value.body }} />
             </div>
         );
     }
-});
+}
+
+TeaserCore.propTypes = {
+    value: PropTypes.object.isRequired,
+};
 
 
-var TeaserBlockView = React.createClass({
-
-    getDefaultProps: function() {
-        return {value: {
-            href: '#',
-            image: '',
-            body: ' ',
-        }};
-    },
-
-    shouldComponentUpdate: function(nextProps) {
+class TeaserBlockView extends React.Component {
+    shouldComponentUpdate(nextProps) {
         return (!_.isEqual(nextProps.value, this.props.value));
-    },
+    }
 
-    render: function() {
+    render() {
         return (
             <div>
                 {this.props.value.href ?
@@ -71,58 +68,101 @@ var TeaserBlockView = React.createClass({
             </div>
         );
     }
-});
+}
 
+TeaserBlockView.propTypes = {
+    value: PropTypes.object,
+};
 
-var RichEditor = React.createClass({
-
-    childContextTypes: {
-        editable: React.PropTypes.bool
+TeaserBlockView.defaultProps = {
+    value: {
+        href: '#',
+        image: '',
+        body: ' ',
     },
+};
 
-    getChildContext: function() {
-        return {editable: true};
-    },
 
-    getInitialState: function() {
-        return {value: {body: this.props.value || '<p></p>'}};
-    },
+class RichEditor extends React.Component {
+    constructor(props) {
+        super(props);
 
-    render: function() {
+        // Set initial React component state.
+        this.state = { value: { body: this.props.value || '<p></p>' } };
+
+        // Bind this to non-React components.
+        this.onChange = this.onChange.bind(this);
+    }
+
+    getChildContext() {
+        return { editable: true };
+    }
+
+    onChange(value) {
+        this.props.onChange(value.body);
+    }
+
+    render() {
         return (
-            <div className="form-control" style={{height: 'auto'}}>
+            <div className="form-control" style={{ height: 'auto' }}>
                 <RichTextBlockView {...this.props} value={this.state.value} onChange={this.onChange} />
             </div>
         );
-    },
-
-    onChange: function(value) {
-        this.props.onChange(value.body);
     }
-});
+}
+
+RichEditor.propTypes = {
+    value: PropTypes.string,
+    onChange: PropTypes.func,
+};
+
+RichEditor.defaultProps = {
+    value: undefined,
+    onChange: null,
+};
+
+RichEditor.childContextTypes = {
+    editable: PropTypes.bool,
+};
 
 
-
-var displayModeSelect = (
+const displayModeSelect = (
     <div><select>
         <option value="">default</option>
     </select></div>
 );
-var imagePicker = <ObjectPicker searchBase={"?mode=picker&type=image"} />;
+const imagePicker = <ObjectPicker searchBase={'?mode=picker&type=image'} />;
 
 globals.blocks.register({
     label: 'teaser block',
     icon: 'icon icon-image',
-    schema: noarg_memoize(function() {
-        var ReactForms = require('react-forms');
-        var Scalar = ReactForms.schema.Scalar;
-        return ReactForms.schema.Mapping({}, {
-            display: Scalar({label: "Display Layout", input: displayModeSelect, defaultValue: "search"}),
-            image: Scalar({label: "Image", input: imagePicker}),
-            body: Scalar({label: "Caption", input: <RichEditor />}),
-            href: Scalar({label: "Link URL"}),
-            className: Scalar({label: 'CSS Class'}),
-        });
-    }),
-    view: TeaserBlockView
+    schema: {
+        type: 'object',
+        properties: {
+            display: {
+                title: 'Display Layout',
+                type: 'string',
+                formInput: displayModeSelect,
+            },
+            image: {
+                title: 'Image',
+                type: 'string',
+                formInput: imagePicker,
+            },
+            body: {
+                title: 'Caption',
+                type: 'string',
+                formInput: <RichEditor />,
+            },
+            href: {
+                title: 'Link URL',
+                type: 'string',
+            },
+            className: {
+                title: 'CSS Class',
+                type: 'string',
+            },
+        },
+    },
+    view: TeaserBlockView,
 }, 'teaserblock');

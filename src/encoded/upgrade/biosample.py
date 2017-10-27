@@ -3,6 +3,7 @@ from .shared import ENCODE2_AWARDS, REFERENCES_UUID
 from past.builtins import long
 import re
 from pyramid.traversal import find_root
+from datetime import datetime, time
 
 
 def number(value):
@@ -144,7 +145,6 @@ def biosample_8_9(value, system):
             value['model_organism_age'] = new_age
 
 
-
 @upgrade_step('biosample', '9', '10')
 def biosample_9_10(value, system):
     # http://redmine.encodedcc.org/issues/2591
@@ -199,3 +199,123 @@ def biosample_11_12(value, system):
 
     if 'references' in value:
         value['references'] = list(set(value['references']))
+
+
+@upgrade_step('biosample', '12', '13')
+def biosample_12_13(value, system):
+    # http://redmine.encodedcc.org/issues/3921
+    if 'note' in value:
+        if 'submitter_comment' in value:
+            if value['note'] != value['submitter_comment']:
+                value['submitter_comment'] = value['submitter_comment'] + '; ' + value['note']
+        else:
+            value['submitter_comment'] = value['note']
+        value.pop('note')
+    # http://redmine.encodedcc.org/issues/1483#note-20
+    if 'starting_amount' in value and value['starting_amount'] == 'unknown':
+            value.pop('starting_amount')
+            value.pop('starting_amount_units')
+    if 'starting_amount_units' in value and 'starting_amount' not in value:
+        value.pop('starting_amount_units')
+    # http://redmine.encodedcc.org/issues/4448
+    if 'protocol_documents' in value:
+        value['documents'] = value['protocol_documents']
+        value.pop('protocol_documents')
+
+
+@upgrade_step('biosample', '13', '14')
+def biosample_13_14(value, system):
+
+    # http://redmine.encodedcc.org/issues/1384
+    if 'notes' in value:
+        if value['notes']:
+            value['notes'] = value['notes'].strip()
+        else:
+            del value['notes']
+    if 'description' in value:
+        if value['description']:
+            value['description'] = value['description'].strip()
+        else:
+            del value['description']
+    if 'submitter_comment' in value:
+        if value['submitter_comment']:
+            value['submitter_comment'] = value['submitter_comment'].strip()
+        else:
+            del value['submitter_comment']
+    if 'product_id' in value:
+        if value['product_id']:
+            value['product_id'] = value['product_id'].strip()
+        else:
+            del value['product_id']
+    if 'lot_id' in value:
+        if value['lot_id']:
+            value['lot_id'] = value['lot_id'].strip()
+        else:
+            del value['lot_id']
+
+    # http://redmine.encodedcc.org/issues/2491
+    if 'subcellular_fraction_term_id' in value:
+        del value['subcellular_fraction_term_id']
+    if 'depleted_in_term_id' in value:
+        del value['depleted_in_term_id']
+    if 'depleted_in_term_name' in value:
+        value['depleted_in_term_name'] = list(set(value['depleted_in_term_name']))
+
+
+def truncate_the_time(date_string):
+    truncation_index = date_string.find('T')
+    if truncation_index != -1:
+        return date_string[:truncation_index]
+    return date_string
+
+
+@upgrade_step('biosample', '15', '16')
+def biosample_15_16(value, system):
+    # http://redmine.encodedcc.org/issues/5096
+    # http://redmine.encodedcc.org/issues/5049
+    if 'talens' in value:
+        del value['talens']
+    if 'pooled_from' in value and value['pooled_from'] == []:
+        del value['pooled_from']
+
+    harvest_date = value.get('culture_harvest_date')
+    culture_start_date = value.get('culture_start_date')
+    date_obtained = value.get('date_obtained')
+
+    if harvest_date:
+        value['culture_harvest_date'] = truncate_the_time(harvest_date)
+    if culture_start_date:
+        value['culture_start_date'] = truncate_the_time(culture_start_date)
+    if date_obtained:
+        value['date_obtained'] = truncate_the_time(date_obtained)
+
+    if value.get('derived_from'):
+        value['originated_from'] = value['derived_from']
+        del value['derived_from']
+
+
+@upgrade_step('biosample', '16', '17')
+def biosample_16_17(value, system):
+    # http://redmine.encodedcc.org/issues/5041
+    if value.get('status') == 'proposed':
+        value['status'] = "in progress"
+
+
+@upgrade_step('biosample', '17', '18')
+def biosample_17_18(value, system):
+    # http://redmine.encodedcc.org/issues/4925
+    return
+
+
+@upgrade_step('biosample', '18', '19')
+def biosample_18_19(value, system):
+    # https://encodedcc.atlassian.net/browse/ENCD-3507
+    # https://encodedcc.atlassian.net/browse/ENCD-3536
+    if 'constructs' in value:
+        del value['constructs']
+    if 'rnais' in value:
+        del value['rnais']
+    if 'transfection_type' in value:
+        del value['transfection_type']
+    if 'transfection_method' in value:
+        del value['transfection_method']

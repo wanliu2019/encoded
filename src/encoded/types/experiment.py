@@ -8,13 +8,24 @@ from .base import (
     ALLOW_SUBMITTER_ADD,
     Item,
     paths_filtered_by_status,
+    SharedItem
 )
 from .dataset import Dataset
 from .shared_calculated_properties import (
     CalculatedBiosampleSlims,
     CalculatedBiosampleSynonyms,
-    CalculatedAssaySynonyms
+    CalculatedAssaySynonyms,
+    CalculatedAssayTermID,
+    CalculatedVisualize
 )
+
+# importing biosample function to allow calculation of experiment biosample property
+from .biosample import (
+    construct_biosample_summary,
+    generate_summary_dictionary
+)
+
+from .assay_data import assay_terms
 
 
 @collection(
@@ -24,91 +35,33 @@ from .shared_calculated_properties import (
         'title': 'Experiments',
         'description': 'Listing of Experiments',
     })
-class Experiment(Dataset, CalculatedBiosampleSlims, CalculatedBiosampleSynonyms, CalculatedAssaySynonyms):
+class Experiment(Dataset,
+                 CalculatedBiosampleSlims,
+                 CalculatedBiosampleSynonyms,
+                 CalculatedAssaySynonyms,
+                 CalculatedAssayTermID,
+                 CalculatedVisualize):
     item_type = 'experiment'
     schema = load_schema('encoded:schemas/experiment.json')
     embedded = Dataset.embedded + [
-        'files.lab',
         'files.platform',
-        'files.lab',
-        'files.derived_from',
-        'files.derived_from.analysis_step_version.software_versions',
-        'files.derived_from.analysis_step_version.software_versions.software',
-        'files.derived_from.replicate',
         'files.analysis_step_version.analysis_step',
-        'files.analysis_step_version.analysis_step.documents',
-        'files.analysis_step_version.analysis_step.documents.award',
-        'files.analysis_step_version.analysis_step.documents.lab',
-        'files.analysis_step_version.analysis_step.documents.submitted_by',
         'files.analysis_step_version.analysis_step.pipelines',
-        'files.analysis_step_version.analysis_step.pipelines.documents',
-        'files.analysis_step_version.analysis_step.pipelines.documents.award',
-        'files.analysis_step_version.analysis_step.pipelines.documents.lab',
-        'files.analysis_step_version.analysis_step.pipelines.documents.submitted_by',
-        'files.analysis_step_version.analysis_step.versions',
-        'files.analysis_step_version.analysis_step.versions.software_versions',
-        'files.analysis_step_version.analysis_step.versions.software_versions.software',
-        'files.analysis_step_version.software_versions',
-        'files.analysis_step_version.software_versions.software',
-        'files.replicate.library.biosample',
-        'files.quality_metrics',
-        'files.quality_metrics.step_run',
-        'files.quality_metrics.step_run.analysis_step_version.analysis_step',
-        'contributing_files.platform',
-        'contributing_files.lab',
-        'contributing_files.derived_from',
-        'contributing_files.analysis_step_version.analysis_step',
-        'contributing_files.analysis_step_version.analysis_step.pipelines',
-        'contributing_files.analysis_step_version.software_versions',
-        'contributing_files.analysis_step_version.software_versions.software',
-        'award.pi.lab',
         'related_series',
         'replicates.antibody',
-        'replicates.antibody.targets',
         'replicates.library',
-        'replicates.library.documents.lab',
-        'replicates.library.documents.submitted_by',
-        'replicates.library.documents.award',
         'replicates.library.biosample.submitted_by',
         'replicates.library.biosample.source',
-        'replicates.library.biosample.characterizations',
-        'replicates.library.biosample.characterizations.award',
-        'replicates.library.biosample.characterizations.lab',
-        'replicates.library.biosample.characterizations.submitted_by',
-        'replicates.library.biosample.constructs.documents',
-        'replicates.library.biosample.constructs.documents.award',
-        'replicates.library.biosample.constructs.documents.lab',
-        'replicates.library.biosample.constructs.documents.submitted_by',
-        'replicates.library.biosample.protocol_documents',
-        'replicates.library.biosample.protocol_documents.award',
-        'replicates.library.biosample.protocol_documents.lab',
-        'replicates.library.biosample.protocol_documents.submitted_by',
-        'replicates.library.biosample.talens.documents',
-        'replicates.library.biosample.talens.documents.award',
-        'replicates.library.biosample.talens.documents.lab',
-        'replicates.library.biosample.talens.documents.submitted_by',
+        'replicates.library.biosample.applied_modifications',
         'replicates.library.biosample.organism',
-        'replicates.library.biosample.rnais.documents',
-        'replicates.library.biosample.rnais.documents.award',
-        'replicates.library.biosample.rnais.documents.lab',
-        'replicates.library.biosample.rnais.documents.submitted_by',
         'replicates.library.biosample.donor',
-        'replicates.library.biosample.donor.documents',
-        'replicates.library.biosample.donor.documents.award',
-        'replicates.library.biosample.donor.documents.lab',
-        'replicates.library.biosample.donor.documents.submitted_by',
-        'replicates.library.biosample.donor.characterizations',
-        'replicates.library.biosample.donor.characterizations.award',
-        'replicates.library.biosample.donor.characterizations.lab',
-        'replicates.library.biosample.donor.characterizations.submitted_by',
         'replicates.library.biosample.donor.organism',
-        'replicates.library.biosample.donor.mutated_gene',
+        'replicates.library.biosample.part_of',
+        'replicates.library.biosample.part_of.donor',
+        'replicates.library.biosample.part_of.treatments',
         'replicates.library.biosample.treatments',
-        'replicates.library.spikeins_used',
         'replicates.library.treatments',
         'possible_controls',
-        'possible_controls.target',
-        'possible_controls.lab',
         'target.organism',
         'references',
     ]
@@ -117,13 +70,13 @@ class Experiment(Dataset, CalculatedBiosampleSlims, CalculatedBiosampleSynonyms,
         'original_files.replicate',
         'original_files.platform',
         'target',
+        'files.analysis_step_version.analysis_step.pipelines',
         'revoked_files',
         'revoked_files.replicate',
         'submitted_by',
         'lab',
         'award',
         'documents',
-        'replicates.antibody',
         'replicates.antibody.characterizations',
         'replicates.antibody.targets',
         'replicates.library',
@@ -134,7 +87,7 @@ class Experiment(Dataset, CalculatedBiosampleSlims, CalculatedBiosampleSynonyms,
         'replicates.library.biosample.donor.organism',
         'replicates.library.biosample.donor',
         'replicates.library.biosample.treatments',
-        'replicates.library.biosample.derived_from',
+        'replicates.library.biosample.originated_from',
         'replicates.library.biosample.part_of',
         'replicates.library.biosample.pooled_from',
         'replicates.library.spikeins_used',
@@ -145,6 +98,7 @@ class Experiment(Dataset, CalculatedBiosampleSlims, CalculatedBiosampleSynonyms,
     rev.update({
         'replicates': ('Replicate', 'experiment'),
         'related_series': ('Series', 'related_datasets'),
+        'superseded_by': ('Experiment', 'supersedes')
     })
 
     @calculated_property(schema={
@@ -158,25 +112,161 @@ class Experiment(Dataset, CalculatedBiosampleSlims, CalculatedBiosampleSynonyms,
     def replicates(self, request, replicates):
         return paths_filtered_by_status(request, replicates)
 
-    @calculated_property(condition='assay_term_id', schema={
+    @calculated_property(schema={
+        "title": "Biosample summary",
+        "type": "string",
+    })
+    def biosample_summary(self,
+                          request,
+                          replicates=None):
+        drop_age_sex_flag = False
+        dictionaries_of_phrases = []
+        biosample_accessions = set()
+        if replicates is not None:
+            for rep in replicates:
+                replicateObject = request.embed(rep, '@@object')
+                if replicateObject['status'] == 'deleted':
+                    continue
+                if 'library' in replicateObject:
+                    libraryObject = request.embed(replicateObject['library'], '@@object')
+                    if libraryObject['status'] == 'deleted':
+                        continue
+                    if 'biosample' in libraryObject:
+                        biosampleObject = request.embed(libraryObject['biosample'], '@@object')
+                        if biosampleObject['status'] == 'deleted':
+                            continue
+                        if biosampleObject['accession'] not in biosample_accessions:
+                            biosample_accessions.add(biosampleObject['accession'])
+
+                            if biosampleObject.get('biosample_type') in [
+                                    'stem cell',
+                                    'in vitro differentiated cells']:
+                                drop_age_sex_flag = True
+
+                            organismObject = None
+                            if 'organism' in biosampleObject:
+                                organismObject = request.embed(biosampleObject['organism'],
+                                                               '@@object')
+                            donorObject = None
+                            if 'donor' in biosampleObject:
+                                donorObject = request.embed(biosampleObject['donor'], '@@object')
+
+                            treatment_objects_list = None
+                            treatments = biosampleObject.get('treatments')
+                            if treatments is not None and len(treatments) > 0:
+                                treatment_objects_list = []
+                                for t in treatments:
+                                    treatment_objects_list.append(request.embed(t, '@@object'))
+
+                            part_of_object = None
+                            if 'part_of' in biosampleObject:
+                                part_of_object = request.embed(biosampleObject['part_of'],
+                                                               '@@object')
+                            originated_from_object = None
+                            if 'originated_from' in biosampleObject:
+                                originated_from_object = request.embed(biosampleObject['originated_from'],
+                                                                       '@@object')
+
+                            modifications_list = None
+                            genetic_modifications = biosampleObject.get('applied_modifications')
+                            if genetic_modifications:
+                                modifications_list = []
+                                for gm in genetic_modifications:
+                                    gm_object = request.embed(gm, '@@object')
+                                    modification_dict = {'category': gm_object.get('category')}
+                                    if gm_object.get('modified_site_by_target_id'):
+                                        modification_dict['target'] = request.embed(
+                                            gm_object.get('modified_site_by_target_id'),
+                                                          '@@object')['label']
+                                    if gm_object.get('introduced_tags_array'):
+                                        modification_dict['tags'] = []
+                                        for tag in gm_object.get('introduced_tags_array'):
+                                            tag_dict = {'location': tag['location']}
+                                            if tag.get('promoter_used'):
+                                                tag_dict['promoter'] = request.embed(
+                                                    tag.get('promoter_used'),
+                                                            '@@object').get['label']
+                                            modification_dict['tags'].append(tag_dict)
+
+                                    modifications_list.append((gm_object['method'], modification_dict))
+
+
+                            dictionary_to_add = generate_summary_dictionary(
+                                organismObject,
+                                donorObject,
+                                biosampleObject.get('age'),
+                                biosampleObject.get('age_units'),
+                                biosampleObject.get('life_stage'),
+                                biosampleObject.get('sex'),
+                                biosampleObject.get('biosample_term_name'),
+                                biosampleObject.get('biosample_type'),
+                                biosampleObject.get('starting_amount'),
+                                biosampleObject.get('starting_amount_units'),
+                                biosampleObject.get('depleted_in_term_name'),
+                                biosampleObject.get('phase'),
+                                biosampleObject.get('subcellular_fraction_term_name'),
+                                biosampleObject.get('synchronization'),
+                                biosampleObject.get('post_synchronization_time'),
+                                biosampleObject.get('post_synchronization_time_units'),
+                                biosampleObject.get('post_treatment_time'),
+                                biosampleObject.get('post_treatment_time_units'),
+                                treatment_objects_list,
+                                part_of_object,
+                                originated_from_object,
+                                modifications_list,
+                                True)
+
+                            dictionaries_of_phrases.append(dictionary_to_add)
+
+        if drop_age_sex_flag is True:
+            sentence_parts = [
+                'strain_background',
+                'experiment_term_phrase',
+                'phase',
+                'fractionated',
+                'synchronization',
+                'modifications_list',
+                'originated_from',
+                'treatments_phrase',
+                'depleted_in'
+            ]
+        else:
+            sentence_parts = [
+                'strain_background',
+                'experiment_term_phrase',
+                'phase',
+                'fractionated',
+                'sex_stage_age',
+                'synchronization',
+                'modifications_list',
+                'originated_from',
+                'treatments_phrase',
+                'depleted_in'
+            ]
+        if len(dictionaries_of_phrases) > 0:
+            return construct_biosample_summary(dictionaries_of_phrases, sentence_parts)
+
+    @calculated_property(condition='assay_term_name', schema={
         "title": "Assay type",
         "type": "array",
         "items": {
             "type": "string",
         },
     })
-    def assay_slims(self, registry, assay_term_id):
+    def assay_slims(self, registry, assay_term_name):
+        assay_term_id = assay_terms.get(assay_term_name, None)
         if assay_term_id in registry['ontology']:
             return registry['ontology'][assay_term_id]['assay']
         return []
 
-    @calculated_property(condition='assay_term_id', schema={
+    @calculated_property(condition='assay_term_name', schema={
         "title": "Assay title",
         "type": "string",
     })
-    def assay_title(self, request, registry, assay_term_id, assay_term_name,
+    def assay_title(self, request, registry, assay_term_name,
                     replicates=None, target=None):
         # This is the preferred name in generate_ontology.py if exists
+        assay_term_id = assay_terms.get(assay_term_name, None)
         if assay_term_id in registry['ontology']:
             preferred_name = registry['ontology'][assay_term_id].get('preferred_name',
                                                                      assay_term_name)
@@ -186,6 +276,7 @@ class Experiment(Dataset, CalculatedBiosampleSlims, CalculatedBiosampleSynonyms,
                     if replicateObject['status'] == 'deleted':
                         continue
                     if 'library' in replicateObject:
+                        preferred_name = 'total RNA-seq'
                         libraryObject = request.embed(replicateObject['library'], '@@object')
                         if 'size_range' in libraryObject and \
                            libraryObject['size_range'] == '<200':
@@ -202,38 +293,41 @@ class Experiment(Dataset, CalculatedBiosampleSlims, CalculatedBiosampleSynonyms,
             return preferred_name or assay_term_name
         return assay_term_name
 
-    @calculated_property(condition='assay_term_id', schema={
+    @calculated_property(condition='assay_term_name', schema={
         "title": "Assay category",
         "type": "array",
         "items": {
             "type": "string",
         },
     })
-    def category_slims(self, registry, assay_term_id):
+    def category_slims(self, registry, assay_term_name):
+        assay_term_id = assay_terms.get(assay_term_name, None)
         if assay_term_id in registry['ontology']:
             return registry['ontology'][assay_term_id]['category']
         return []
 
-    @calculated_property(condition='assay_term_id', schema={
+    @calculated_property(condition='assay_term_name', schema={
         "title": "Assay type",
         "type": "array",
         "items": {
             "type": "string",
         },
     })
-    def type_slims(self, registry, assay_term_id):
+    def type_slims(self, registry, assay_term_name):
+        assay_term_id = assay_terms.get(assay_term_name, None)
         if assay_term_id in registry['ontology']:
             return registry['ontology'][assay_term_id]['types']
         return []
 
-    @calculated_property(condition='assay_term_id', schema={
+    @calculated_property(condition='assay_term_name', schema={
         "title": "Assay objective",
         "type": "array",
         "items": {
             "type": "string",
         },
     })
-    def objective_slims(self, registry, assay_term_id):
+    def objective_slims(self, registry, assay_term_name):
+        assay_term_id = assay_terms.get(assay_term_name, None)
         if assay_term_id in registry['ontology']:
             return registry['ontology'][assay_term_id]['objectives']
         return []
@@ -250,6 +344,17 @@ class Experiment(Dataset, CalculatedBiosampleSlims, CalculatedBiosampleSynonyms,
         return paths_filtered_by_status(request, related_series)
 
     @calculated_property(schema={
+        "title": "Superseded by",
+        "type": "array",
+        "items": {
+            "type": ['string', 'object'],
+            "linkFrom": "Experiment.supersedes",
+        },
+    })
+    def superseded_by(self, request, superseded_by):
+        return paths_filtered_by_status(request, superseded_by)
+
+    @calculated_property(schema={
         "title": "Replication type",
         "description": "Calculated field that indicates the replication model",
         "type": "string"
@@ -258,8 +363,6 @@ class Experiment(Dataset, CalculatedBiosampleSlims, CalculatedBiosampleSynonyms,
         # Compare the biosamples to see if for humans they are the same donor and for
         # model organisms if they are sex-matched and age-matched
         biosample_dict = {}
-        biosample_age_list = []
-        biosample_sex_list = []
         biosample_donor_list = []
         biosample_number_list = []
 
@@ -272,8 +375,6 @@ class Experiment(Dataset, CalculatedBiosampleSlims, CalculatedBiosampleSynonyms,
                 if 'biosample' in libraryObject:
                     biosampleObject = request.embed(libraryObject['biosample'], '@@object')
                     biosample_dict[biosampleObject['accession']] = biosampleObject
-                    biosample_age_list.append(biosampleObject.get('age'))
-                    biosample_sex_list.append(biosampleObject.get('sex'))
                     biosample_donor_list.append(biosampleObject.get('donor'))
                     biosample_number_list.append(replicateObject.get('biological_replicate_number'))
                     biosample_species = biosampleObject.get('organism')
@@ -314,39 +415,21 @@ class Experiment(Dataset, CalculatedBiosampleSlims, CalculatedBiosampleSynonyms,
             else:
                 return 'isogenic'
 
-        if 'unknown' in biosample_age_list:
-            matchedAgeFlag = False
-        elif len(set(biosample_age_list)) == 1:
-            matchedAgeFlag = True
-        else:
-            matchedAgeFlag = False
-
-        if 'unknown' in biosample_sex_list:
-            matchedSexFlag = False
-        elif len(set(biosample_sex_list)) == 1:
-            matchedSexFlag = True
-        else:
-            matchedSexFlag = False
-
-        if matchedAgeFlag and matchedSexFlag:
-            return 'anisogenic, sex-matched and age-matched'
-        if matchedAgeFlag and not matchedSexFlag:
-            return 'anisogenic, age-matched'
-        if not matchedAgeFlag and matchedSexFlag:
-            return 'anisogenic, sex-matched'
-        if not matchedAgeFlag and not matchedSexFlag:
-            return 'anisogenic'
+        return 'anisogenic'
 
     matrix = {
         'y': {
             'facets': [
                 'replicates.library.biosample.donor.organism.scientific_name',
-                'replicates.library.biosample.biosample_type',
+                'biosample_type',
                 'organ_slims',
                 'award.project',
                 'assembly',
+                'internal_status',
+                'audit_category', # Added for auditmatrix
+                'lab.title'
             ],
-            'group_by': ['replicates.library.biosample.biosample_type', 'biosample_term_name'],
+            'group_by': ['biosample_type', 'biosample_term_name'],
             'label': 'Biosample',
         },
         'x': {

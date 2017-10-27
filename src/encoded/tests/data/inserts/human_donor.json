@@ -4,7 +4,7 @@
         "age": "21",
         "age_units": "year",
         "aliases": [
-            "promocell:8121902"
+            "encode:8121902"
         ],
         "alternate_accessions": [
             "ENCDO117AAA"
@@ -39,13 +39,16 @@
         "accession": "ENCDO000HUM",
         "award": "U41HG006992",
         "documents": [
-            "ENCODE:PanIsletD_Crawford_protocol"
+            "encode:PanIsletD_Crawford_protocol"
         ],
-        "ethnicity": "unknown",
         "health_status": "unknown",
         "lab": "j-michael-cherry",
         "life_stage": "unknown",
         "organism": "human",
+        "parents": [
+            "ENCDO058AAA",
+            "ENCDO000AAK"
+        ],
         "references": [
             "4cb65ec0-bd49-11e4-bb52-0800200c9a66",
             "b163ba10-bd4a-11e4-bb52-0800200c9a66"
@@ -56,7 +59,6 @@
     {
         "accession": "ENCDO106AAA",
         "award": "U41HG006992",
-        "ethnicity": "unknown",
         "health_status": "unknown",
         "lab": "j-michael-cherry",
         "life_stage": "unknown",
@@ -67,7 +69,7 @@
     {
         "accession": "ENCDO275AAA",
         "award": "U41HG006992",
-        "ethnicity": "unknown",
+        "ethnicity": "Black",
         "health_status": "unknown",
         "lab": "j-michael-cherry",
         "life_stage": "unknown",
@@ -78,7 +80,7 @@
     {
         "accession": "ENCDO276AAA",
         "award": "U41HG006992",
-        "ethnicity": "unknown",
+        "ethnicity": "Asian",
         "health_status": "unknown",
         "lab": "j-michael-cherry",
         "life_stage": "unknown",
@@ -112,7 +114,13 @@
         "organism": "human",
         "sex": "female",
         "status": "released",
-        "url": "http://ccr.coriell.org/Sections/BrowseCatalog/FamilyTypeSubDetail.aspx?PgId=402&fam=1463&coll=GM",
         "uuid": "44d24e3f-bc5b-469a-8500-7ebd728f8ed5"
+    },
+    {
+        "accession": "ENCDO003HUM",
+        "award": "U41HG006992",
+        "lab": "j-michael-cherry",
+        "organism": "human",
+        "uuid": "ba1e3e4f-7ca1-4546-86c3-42df0134d627"
     }
 ]

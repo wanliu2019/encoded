@@ -4,7 +4,7 @@ from snovault import (
 )
 
 
-@audit_checker('pipeline', frame=['analysis_steps'])
+@audit_checker('Pipeline', frame=['analysis_steps'])
 def audit_analysis_steps_closure(value, system):
     ''' The analysis_steps list should include all of a steps ancestors.
     '''
@@ -16,3 +16,7 @@ def audit_analysis_steps_closure(value, system):
     if diff:
         detail = ', '.join(sorted(diff))
         raise AuditFailure('incomplete analysis_steps', detail, level='ERROR')
+
+
+# def audit_pipeline_assay(value, system):
+# https://encodedcc.atlassian.net/browse/ENCD-3416

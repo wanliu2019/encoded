@@ -1,5 +1,6 @@
 from future.standard_library import install_aliases
 install_aliases()  # NOQA
+import encoded.schema_formats # needed to import before snovault to add FormatCheckers
 import base64
 import codecs
 import json
@@ -25,7 +26,6 @@ from snovault.elasticsearch import (
     PyramidJSONSerializer,
     TimedUrllib3HttpConnection,
 )
-from snovault.elasticsearch.interfaces import SNP_SEARCH_ES
 from snovault.json_renderer import json_renderer
 from elasticsearch import Elasticsearch
 STATIC_MAX_AGE = 0
@@ -195,13 +195,7 @@ def main(global_config, **local_config):
     settings['snovault.jsonld.namespaces'] = json_asset('encoded:schemas/namespaces.json')
     settings['snovault.jsonld.terms_namespace'] = 'https://www.encodeproject.org/terms/'
     settings['snovault.jsonld.terms_prefix'] = 'encode'
-    settings['snovault.elasticsearch.index'] = 'encoded'
-    hostname_command = settings.get('hostname_command', '').strip()
-    if hostname_command:
-        hostname = subprocess.check_output(hostname_command, shell=True).strip()
-        settings.setdefault('persona.audiences', '')
-        settings['persona.audiences'] += '\nhttp://%s' % hostname
-        settings['persona.audiences'] += '\nhttp://%s:6543' % hostname
+    settings['snovault.elasticsearch.index'] = 'snovault'
 
     config = Configurator(settings=settings)
     from snovault.elasticsearch import APP_FACTORY
@@ -213,7 +207,7 @@ def main(global_config, **local_config):
     # Override default authz policy set by pyramid_multiauth
     config.set_authorization_policy(LocalRolesAuthorizationPolicy())
     config.include(session)
-    config.include('.persona')
+    config.include('.auth0')
 
     config.include(configure_dbsession)
     config.include('snovault')
@@ -231,6 +225,7 @@ def main(global_config, **local_config):
     if 'elasticsearch.server' in config.registry.settings:
         config.include('snovault.elasticsearch')
         config.include('.search')
+        config.include('.secondary_indexer')
 
     if 'snp_search.server' in config.registry.settings:
         addresses = aslist(config.registry.settings['snp_search.server'])
@@ -239,13 +234,13 @@ def main(global_config, **local_config):
             serializer=PyramidJSONSerializer(json_renderer),
             connection_class=TimedUrllib3HttpConnection,
             retry_on_timeout=True,
-            timeout=30,
+            timeout=60,
+            maxsize=50
         )
         config.include('.region_search')
         config.include('.peak_indexer')
     config.include(static_resources)
     config.include(changelogs)
-
     config.registry['ontology'] = json_from_path(settings.get('ontology_path'), {})
     aws_ip_ranges = json_from_path(settings.get('aws_ip_ranges_path'), {'prefixes': []})
     config.registry['aws_ipset'] = netaddr.IPSet(

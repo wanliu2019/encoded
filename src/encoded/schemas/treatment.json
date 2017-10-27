@@ -13,71 +13,69 @@
         { "$ref": "mixins.json#/shared_status" },
         { "$ref": "mixins.json#/submitted" },
         { "$ref": "mixins.json#/notes" },
-        { "$ref": "mixins.json#/treatment_classification"}
+        { "$ref": "mixins.json#/treatment_classification"},
+        { "$ref": "mixins.json#/documents"}
     ],
     "dependencies": {
         "temperature": ["temperature_units"],
-        "temperature_units": ["temperature"]
+        "temperature_units": ["temperature"],
+        "amount": ["amount_units"],
+        "amount_units": ["amount"],
+        "duration": ["duration_units"],
+        "duration_units": ["duration"]
     },
     "properties": {
         "schema_version": {
-            "default": "4"
+            "default": "9"
         },
         "lab": {
             "title": "Lab",
-             "description": "Lab associated with the submission.",
+            "description": "Lab associated with the submission.",
             "comment": "See lab.json for list of available identifiers.",
             "type": "string",
             "linkTo": "Lab"
         },
-        "protocols": {
-            "title": "Protocol documents",
-            "description": "Documents that describe the treatment protocol.",
-            "type": "array",
-            "default": [],
-            "uniqueItems": true,
-            "items": {
-                "title": "Protocol document",
-                "description": "A document that describes the treatment protocol.",
-                "comment": "See document.json for available identifiers.",
-                "type": "string",
-                "linkTo": "Document"
-            }
+        "documents": {
+            "description": "Documents that describe the treatment protocol."
         },
         "dbxrefs": {
             "@type": "@id",
             "rdfs:subPropertyOf": "rdfs:seeAlso",
             "title": "External identifiers",
-            "description": "Unique identifiers from external resources.",
+            "description": "Identifiers from external resources that may have 1-to-1 or 1-to-many relationships with ENCODE objects.",
             "type": "array",
             "uniqueItems": true,
             "default": [],
             "items": {
                 "title": "External identifier",
-                "description": "A unique identifier from external resource.",
+                "description": "Identifier from an external resource that may have 1-to-1 or 1-to-many relationships with ENCODE objects.",
                 "type":  "string",
                 "pattern": "^(UCSC-ENCODE-cv:[\\S\\s\\d\\-\\(\\)\\+]+)$"
             }
         },
-        "concentration": {
-            "title": "Concentration",
+        "amount": {
+            "title": "Amount of treatment applied",
             "type": "number"
         },
-        "concentration_units": {
-            "title": "Concentration units",
+        "amount_units": {
+            "title": "Amount units",
             "type": "string",
             "enum": [
-                "pM",
-                "nM",
-                "μM",
-                "μg/mL",
-                "mM",
-                "mg/mL",
-                "ng/mL",
                 "M",
+                "mg",
+                "mg/mL",
+                "mM",
+                "ng/mL",
+                "nM",
                 "percent",
+                "pfu",
+                "pM",
+                "rad",
+                "U/mL",
                 "units",
-                "U/mL"
+                "μg",
+                "μg/mL",
+                "μM"
             ]
         },
         "duration": {
@@ -106,6 +104,36 @@
                 "Fahrenheit",
                 "Kelvin"
             ]
+        },
+        "biosamples_used": {
+             "title": "Biosamples used in this treatment.",
+             "description": "Biosamples used in this treatment.",
+             "type": "array",
+             "default": [],
+             "uniqueItems": true,
+             "items": {
+                 "title": "Treatment biosample",
+                 "description": "Biosample used in this treatment.",
+                 "comment": "See biosample.json for available identifiers.",
+                 "type":  "string",
+                 "linkTo": "Biosample"
+             }
+         },
+        "antibodies_used": {
+             "title": "Treatment antibodies",
+             "description": "Antibodies used in this treatment.",
+             "type": "array",
+             "default": [],
+             "uniqueItems": true,
+             "items": {
+                 "title": "Treatment antibody",
+                 "description": "Antibody used in this treatment.",
+                 "comment": "See antibody_lot.json for available identifiers.",
+                 "type":  "string",
+                 "linkTo": "AntibodyLot"
+             }
         }
-    }
+    },
+    "changelog": "/profiles/changelogs/treatment.md"
+
 }

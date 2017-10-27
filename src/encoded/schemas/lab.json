@@ -9,11 +9,12 @@
     "mixinProperties": [
         { "$ref": "mixins.json#/schema_version" },
         { "$ref": "mixins.json#/uuid" },
+        { "$ref": "mixins.json#/url" },
         { "$ref": "mixins.json#/shared_status" }
     ],
     "properties": {
         "schema_version": {
-            "default": "3"
+            "default": "5"
         },
         "name": {
             "title": "Name",
@@ -53,43 +54,51 @@
             "title": "Institute label",
             "description": "An abbreviation for the institute the lab is associated with.",
             "type": "string",
-            "default": ""
+            "default": "",
+            "pattern": "^(\\S+(\\s|\\S)*\\S+|\\S)$|^$"
         },
         "institute_name": {
             "title": "Institute",
             "description": "The name for the institute the lab is associated with.",
             "type": "string",
-            "default": ""
+            "default": "",
+            "pattern": "^(\\S+(\\s|\\S)*\\S+|\\S)$|^$"
         },
         "address1": {
             "title": "Address line 1",
             "type": "string",
-            "default": ""
+            "default": "",
+            "pattern": "^(\\S+(\\s|\\S)*\\S+|\\S)$|^$"
         },
         "address2": {
             "title": "Address line 2",
-            "type": "string"
+            "type": "string",
+            "pattern": "^(\\S+(\\s|\\S)*\\S+|\\S)$"
         },
         "city": {
             "title": "City",
             "type": "string",
-            "default": ""
+            "default": "",
+            "pattern": "^(\\S+(\\s|\\S)*\\S+|\\S)$|^$"
         },
         "state": {
             "title": "State/Province/Region",
             "type": "string",
-            "default": ""
+            "default": "",
+            "pattern": "^(\\S+(\\s|\\S)*\\S+|\\S)$|^$"
         },
         "country": {
             "title": "Country",
             "type": "string",
-            "default": ""
+            "default": "",
+            "pattern": "^(\\S+(\\s|\\S)*\\S+|\\S)$|^$"
         },
         "postal_code": {
             "title": "ZIP/Postal code",
             "type": "string",
             "default": "",
-            "format": "postal-code"
+            "format": "postal-code",
+            "pattern": "^(\\S+(\\s|\\S)*\\S+|\\S)$|^$"
         },
         "fax": {
             "title": "Fax number",
@@ -111,12 +120,6 @@
             "type": "string",
             "default": "",
             "format": "phone"
-        },
-        "url": {
-            "title": "URL",
-            "description": "An external resource with additional information about the lab.",
-            "type": "string",
-            "format": "uri"
         }
     },
     "boost_values": {
@@ -125,5 +128,7 @@
         "awards.title":1.0,
         "institute_name": 1.0,
         "institute_label": 1.0
-    }
+    },
+    "changelog": "/profiles/changelogs/lab.md"
+
 }

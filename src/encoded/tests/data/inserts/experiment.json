@@ -2,7 +2,6 @@
     {
         "_test": "shared biosample",
         "accession": "ENCSR000AER",
-        "assay_term_id": "OBI:0001864",
         "assay_term_name": "RAMPAGE",
         "award": "U54HG007004",
         "biosample_term_id": "EFO:0002067",
@@ -11,14 +10,15 @@
         "description": "RNA Evaluation K562 Long Total RAMPAGE from Gingeras",
         "lab": "thomas-gingeras",
         "status": "released",
+        "date_submitted": "2015-01-20",
         "date_released": "2016-01-01",
+        "internal_tags":["DREAM", "ENTEx", "ENCORE"],
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "5a6d5a57-e62d-44b9-a1bd-5d1815247348"
     },
     {
         "_test": "shared biosample",
         "accession": "ENCSR000AEM",
-        "assay_term_id": "OBI:0001271",
         "assay_term_name": "RNA-seq",
         "award": "U54HG007004",
         "biosample_term_id": "EFO:0002067",
@@ -27,6 +27,8 @@
         "description": "RNA Evaluation K562 Long Poly-A+  RNA-seq from Gingeras",
         "lab": "thomas-gingeras",
         "status": "released",
+        "date_submitted": "2015-02-20",
+        "supersedes": ["ENCSR000AES"],
         "date_released": "2016-01-01",
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "a357b33b-cdaa-4312-91c0-086bfec24181"
@@ -34,7 +36,6 @@
     {
         "_test": "shared biosample",
         "accession": "ENCSR000AES",
-        "assay_term_id": "OBI:0001271",
         "assay_term_name": "RNA-seq",
         "award": "U54HG007004",
         "biosample_term_id": "EFO:0002067",
@@ -42,7 +43,8 @@
         "biosample_type": "immortalized cell line",
         "description": "RNA Evaluation K562 Small Total RNA-seq from Gingeras",
         "lab": "thomas-gingeras",
-        "status": "released",
+        "date_submitted": "2015-03-20",
+        "status": "archived",
         "date_released": "2016-01-01",
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "d8e3c296-ae36-417b-855a-8bfbe3d33e3b"
@@ -50,7 +52,6 @@
     {
         "_test": "control chip-seq with files",
         "accession": "ENCSR000ADH",
-        "assay_term_id": "OBI:0000716",
         "assay_term_name": "ChIP-seq",
         "award": "ENCODE2-Mouse",
         "biosample_term_id": "EFO:0005233",
@@ -63,10 +64,11 @@
         ],
         "description": "CH12 Control Histone Mods by ChIP-seq performed by Yale",
         "documents": [
-            "ENCODE:Snyder_Histone_Mouse_protocol"
+            "encode:Snyder_Histone_Mouse_protocol"
         ],
         "lab": "sherman-weissman",
         "status": "released",
+        "date_submitted": "2015-04-20",
         "date_released": "2016-01-01",
         "submitted_by": "amet.fusce@est.fermentum",
         "target": "Control-mouse",
@@ -75,7 +77,6 @@
     {
         "_test": "refers to the control dataset",
         "accession": "ENCSR000ADI",
-        "assay_term_id": "OBI:0000716",
         "assay_term_name": "ChIP-seq",
         "award": "ENCODE2-Mouse",
         "biosample_term_id": "EFO:0005233",
@@ -88,13 +89,14 @@
         ],
         "description": "CH12 H3K4me3 Histone Mods by ChIP-seq performed by Yale",
         "documents": [
-            "ENCODE:Snyder_Histone_Mouse_protocol"
+            "encode:Snyder_Histone_Mouse_protocol"
         ],
        "lab": "sherman-weissman",
         "possible_controls": [
             "df02f3f9-a6d4-40e4-a8dc-c1c7387e4556"
         ],
         "status": "released",
+        "date_submitted": "2015-05-20",
         "date_released": "2016-01-01",
         "submitted_by": "amet.fusce@est.fermentum",
         "target": "H3K4me3-mouse",
@@ -103,7 +105,6 @@
     {
         "_test": "anisogenic experiemnt",
         "accession": "ENCSR001ADI",
-        "assay_term_id": "OBI:0000716",
         "assay_term_name": "ChIP-seq",
         "award": "ENCODE2-Mouse",
         "biosample_term_id": "EFO:0005233",
@@ -116,13 +117,14 @@
         ],
         "description": "CH12 H3K4me3 Histone Mods by ChIP-seq performed by Yale",
         "documents": [
-            "ENCODE:Snyder_Histone_Mouse_protocol"
+            "encode:Snyder_Histone_Mouse_protocol"
         ],
         "lab": "sherman-weissman",
         "possible_controls": [
             "df02f3f9-a6d4-40e4-a8dc-c1c7387e4556"
         ],
         "status": "released",
+        "date_submitted": "2015-06-20",
         "date_released": "2016-01-01",
         "submitted_by": "amet.fusce@est.fermentum",
         "target": "H3K4me3-mouse",
@@ -131,7 +133,6 @@
     {
         "_test": "human chip-seq",
         "accession": "ENCSR000AHF",
-        "assay_term_id": "OBI:0000716",
         "assay_term_name": "ChIP-seq",
         "award": "ENCODE2",
         "biosample_term_id": "EFO:0001203",
@@ -143,10 +144,11 @@
         ],
         "description": "HAIB ChIP TAF1 in MCF-7",
         "documents": [
-            "ENCODE:Myers_Lab_ChIP-seq_Protocol_v042211"
+            "encode:Myers_Lab_ChIP-seq_Protocol_v042211"
         ],
         "lab": "richard-myers",
         "status": "released",
+        "date_submitted": "2015-07-20",
         "date_released": "2016-01-01",
         "submitted_by": "facilisi.tristique@potenti.vivamus",
         "target": "TAF1-human",
@@ -156,8 +158,7 @@
     {
         "_test": "methy array",
         "accession": "ENCSR000ACY",
-        "assay_term_id": "OBI:0001332",
-        "assay_term_name": "MethylArray",
+        "assay_term_name": "DNA methylation profiling by array assay",
         "award": "ENCODE2",
         "biosample_term_id": "CL:1000350",
         "biosample_term_name": "basal cell of epithelium of terminal bronchiole",
@@ -169,10 +170,11 @@
         ],
         "description": "UW  SAEC",
         "documents": [
-            "ENCODE:Myers_Methyl450_protocol"
+            "encode:Myers_Methyl450_protocol"
         ],
         "lab": "richard-myers",
         "status": "released",
+        "date_submitted": "2015-08-20",
         "date_released": "2016-01-01",
         "submitted_by": "facilisi.tristique@potenti.vivamus",
         "uuid": "b29de469-ed4b-4acf-8b4d-f1af02def8e8"
@@ -180,12 +182,13 @@
     {
         "_test": "NTR for assay and no replicates",
         "accession": "ENCSR000AJK",
-        "assay_term_id": "OBI:0002042",
-        "assay_term_name": "carbon-copy chromosome conformation capture assay followed by sequencing assay",
+        "assay_term_name": "HiC",
         "award": "U54HG006998",
+        "biosample_type": "in vitro sample",
         "description": "Irvine Hi-C GM12878",
         "lab": "ali-mortazavi",
         "status": "released",
+        "date_submitted": "2015-09-20",
         "date_released": "2016-01-01",
         "submitted_by": "netus.lorem@risus.lobortis",
         "uuid": "355ffbf8-0bc9-4545-ad3c-1ae71b4e2d85"
@@ -193,15 +196,16 @@
     {
         "_test": "shared biosample",
         "accession": "ENCSR000AEN",
-        "assay_term_id": "NTR:0000762",
         "assay_term_name": "shRNA knockdown followed by RNA-seq",
         "award": "U54HG007005",
         "biosample_term_id": "EFO:0002067",
         "biosample_term_name": "K562",
         "biosample_type": "immortalized cell line",
         "description": "RNA Evaluation K562 Long Total from Graveley",
+        "internal_tags": ["dbGaP"],
         "lab": "brenton-graveley",
         "status": "released",
+        "date_submitted": "2015-10-20",
         "date_released": "2016-01-01",
         "references": [
             "4cb65ec0-bd49-11e4-bb52-0800200c9a66",
@@ -213,7 +217,6 @@
     {
         "_test": "no replicates",
         "accession": "ENCSR000AAL",
-        "assay_term_id": "OBI:0001271",
         "assay_term_name": "RNA-seq",
         "award": "U54HG007004",
         "biosample_term_id": "EFO:0002067",
@@ -222,6 +225,7 @@
         "description": "RNA Evaluation K562 Small Total RNA-seq from Gingeras",
         "lab": "thomas-gingeras",
         "status": "released",
+        "date_submitted": "2015-11-20",
         "date_released": "2016-01-01",
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "ddd11381-7958-4d58-af02-fc56255c838b"
@@ -229,7 +233,6 @@
     {
         "_test": "replicates no files",
         "accession": "ENCSR999NOF",
-        "assay_term_id": "OBI:0001271",
         "assay_term_name": "RNA-seq",
         "award": "U54HG007004",
         "biosample_term_id": "EFO:0002067",
@@ -238,6 +241,7 @@
         "description": "RNA Evaluation K562 Small Total RNA-seq from Gingeras",
         "lab": "thomas-gingeras",
         "status": "released",
+        "date_submitted": "2015-12-20",
         "date_released": "2016-01-01",
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "223af596-e5ca-4048-9ea8-9a41c240181d"
@@ -245,8 +249,7 @@
     {
         "_test": "patch users",
         "accession": "ENCSR000ACT",
-        "assay_term_id": "OBI:0001332",
-        "assay_term_name": "MethylArray",
+        "assay_term_name": "DNA methylation profiling by array assay",
         "award": "ENCODE2",
         "biosample_term_id": "CL:1000350",
         "biosample_term_name": "basal cell of epithelium of terminal bronchiole",
@@ -254,6 +257,7 @@
         "description": "UW  SAEC",
         "lab": "richard-myers",
         "status": "released",
+        "date_submitted": "2015-01-20",
         "date_released": "2016-01-01",
         "submitted_by": "facilisi.tristique@potenti.vivamus",
         "uuid": "509cf1b1-4113-4a1e-a49f-d62ebf3367cf"
@@ -261,8 +265,7 @@
     {
         "_test": "patch users",
         "accession": "ENCSR001ACT",
-        "assay_term_id": "OBI:0001332",
-        "assay_term_name": "MethylArray",
+        "assay_term_name": "DNA methylation profiling by array assay",
         "award": "ENCODE2",
         "biosample_term_id": "CL:1000350",
         "biosample_term_name": "basal cell of epithelium of terminal bronchiole",
@@ -270,15 +273,16 @@
         "description": "UW  SAEC",
         "lab": "richard-myers",
         "status": "released",
+        "date_submitted": "2015-02-20",
         "date_released": "2016-01-01",
         "submitted_by": "facilisi.tristique@potenti.vivamus",
-        "uuid": "4ae10d69-f6fa-4757-b243-821dd8a9bf25"
+        "uuid": "4ae10d69-f6fa-4757-b243-821dd8a9bf25",
+        "supersedes": ["ENCSR000ACT"]
     },
     {
         "_test": "patch users",
         "accession": "ENCSR002ACT",
-        "assay_term_id": "OBI:0001332",
-        "assay_term_name": "MethylArray",
+        "assay_term_name": "DNA methylation profiling by array assay",
         "award": "ENCODE2",
         "biosample_term_id": "CL:1000350",
         "biosample_term_name": "basal cell of epithelium of terminal bronchiole",
@@ -286,19 +290,22 @@
         "description": "UW  SAEC",
         "lab": "richard-myers",
         "status": "released",
+        "date_submitted": "2015-03-20",
         "date_released": "2016-01-01",
         "submitted_by": "facilisi.tristique@potenti.vivamus",
-        "uuid": "a099b9ac-50c0-4c96-a3eb-9fa032388ebf"
+        "uuid": "a099b9ac-50c0-4c96-a3eb-9fa032388ebf",
+        "supersedes": ["ENCSR000ACT", "ENCSR001ACT"]
     },
     {
         "_test": "Bind and Seq",
         "accession": "ENCSR666EMD",
-        "assay_term_id": "NTR:0001132",
         "assay_term_name": "RNA Bind-n-Seq",
         "award": "ENCODE2",
         "description": "Sample “RNA Bind-n-Seq” (RBNS) experiment against PTBP1",
         "lab": "chris-burge",
         "status": "released",
+        "biosample_type": "in vitro sample",
+        "date_submitted": "2015-04-20",
         "date_released": "2016-01-01",
         "submitted_by": "facilisi.tristique@potenti.vivamus",
         "uuid": "32bd1f35-d011-4b8e-9601-2929d9688474",
@@ -314,18 +321,17 @@
         "biosample_term_id": "EFO:0002067",
         "organ_slims": [],
         "biosample_term_name": "K562",
-        "assay_term_id": "OBI:0001863",
         "status": "released",
+        "date_submitted": "2015-05-20",
         "date_released": "2016-01-01",
         "description": "HAIB Whole Genome Bisulfite Sequencing K562",
-        "assay_term_name": "whole genome bisulfite sequencing",
+        "assay_term_name": "whole-genome shotgun bisulfite sequencing",
         "lab": "richard-myers",
         "submitted_by": "facilisi.tristique@potenti.vivamus"
     },
     {
         "_test": "ENCODE 2 pipeline ChIP-seq control",
         "accession": "ENCSR000EYX",
-        "assay_term_id": "OBI:0000716",
         "assay_term_name": "ChIP-seq",
         "award": "ENCODE2/",
         "biosample_term_id": "EFO:0002784",
@@ -338,6 +344,7 @@
         "description": "Control ChIP-seq on human GM12878",
         "lab": "michael-snyder",
         "status": "released",
+        "date_submitted": "2015-06-20",
         "date_released": "2016-01-01",
         "submitted_by": "amet.fusce@est.fermentum",
         "target": "Control-human",
@@ -346,7 +353,6 @@
     {
         "_test": "ENCODE 2 pipeline ChIP-seq",
         "accession": "ENCSR000DZQ",
-        "assay_term_id": "OBI:0000716",
         "assay_term_name": "ChIP-seq",
         "award": "ENCODE2/",
         "biosample_term_id": "EFO:0002784",
@@ -362,6 +368,7 @@
             "ENCSR000EYX"
         ],
         "status": "released",
+        "date_submitted": "2015-07-20",
         "date_released": "2016-01-01",
         "submitted_by": "amet.fusce@est.fermentum",
         "target": "EBF1-human",
@@ -370,7 +377,6 @@
     {
         "_test": "treatment control",
         "accession": "ENCSR001CTL",
-        "assay_term_id": "OBI:0001919",
         "assay_term_name": "5C",
         "award": "U54HG007004",
         "biosample_term_id": "EFO:0001086",
@@ -380,6 +386,7 @@
         "description": "Control ChIP-seq on A549 cell line. (set to type 5C for testing)",
         "lab": "robert-waterston",
         "status": "released",
+        "date_submitted": "2015-08-20",
         "date_released": "2016-01-01",
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "e162561a-08c0-463c-93d8-c4f924584e13"
@@ -387,7 +394,6 @@
     {
         "_test": "treatment time series 1",
         "accession": "ENCSR001SER",
-        "assay_term_id": "OBI:0000716",
         "assay_term_name": "ChIP-seq",
         "award": "U54HG007004",
         "biosample_term_id": "EFO:0001086",
@@ -398,6 +404,7 @@
         "description": "TCF4 ChIP-seq on A549 cell line treated with 100 nM dexamethasone for 8 hours.",
         "lab": "robert-waterston",
         "status": "released",
+        "date_submitted": "2015-09-20",
         "date_released": "2016-01-01",
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "4cead359-10e9-49a8-9d20-f05b2499b919",
@@ -406,7 +413,6 @@
     {
         "_test": "treatment time series 2",
         "accession": "ENCSR002SER",
-        "assay_term_id": "OBI:0000716",
         "assay_term_name": "ChIP-seq",
         "award": "U54HG007004",
         "biosample_term_id": "EFO:0001086",
@@ -417,6 +423,7 @@
         "description": "TCF4 ChIP-seq on A549 cell line treated with 100 nM dexamethasone for 10 hours.",
         "lab": "robert-waterston",
         "status": "released",
+        "date_submitted": "2015-10-20",
         "date_released": "2016-01-01",
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "2e83f6f9-6744-4ab1-893b-0c14d0a6e8ed"
@@ -424,7 +431,6 @@
     {
         "_test": "treatment time series 3 missing possible_controls",
         "accession": "ENCSR003SER",
-        "assay_term_id": "OBI:0000716",
         "assay_term_name": "ChIP-seq",
         "award": "U54HG007004",
         "biosample_term_id": "EFO:0001086",
@@ -434,6 +440,7 @@
         "description": "TCF4 ChIP-seq on A549 cell line treated with 100 nM dexamethasone for 12 hours.",
         "lab": "robert-waterston",
         "status": "released",
+        "date_submitted": "2015-11-20",
         "date_released": "2016-01-01",
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "fe9fe0cb-b859-461c-8d0f-4fa5f8e9377f"
@@ -441,7 +448,6 @@
         {
         "_test": "treatment concentration series 1",
         "accession": "ENCSR001CON",
-        "assay_term_id": "OBI:0000716",
         "assay_term_name": "ChIP-seq",
         "award": "U54HG007004",
         "biosample_term_id": "EFO:0001086",
@@ -452,14 +458,14 @@
         "description": "TCF4 ChIP-seq on A549 cell line treated with 100 nM dexamethasone for 8 hours.",
         "lab": "robert-waterston",
         "status": "released",
+        "date_submitted": "2015-12-20",
         "date_released": "2016-01-01",
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "7a9ac6d3-278f-4a0f-bc6b-8356ff10fa8b"
     },
     {
-        "_test": "treatment concentration series 2 proposed",
+        "_test": "treatment concentration series 2 started",
         "accession": "ENCSR002CON",
-        "assay_term_id": "OBI:0000716",
         "assay_term_name": "ChIP-seq",
         "award": "U54HG007004",
         "biosample_term_id": "EFO:0001086",
@@ -469,15 +475,13 @@
         "target": "/targets/TCF4-human",
         "description": "TCF4 ChIP-seq on A549 cell line treated with 80 nM dexamethasone for 8 hours.",
         "lab": "robert-waterston",
-        "status": "proposed",
-        "date_released": "2016-01-01",
+        "status": "started",
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "4c1be4ea-22ae-4880-9002-03617e3dde92"
     },
     {
         "_test": "treatment concentration series 3",
         "accession": "ENCSR003CON",
-        "assay_term_id": "OBI:0000716",
         "assay_term_name": "ChIP-seq",
         "award": "U54HG007004",
         "biosample_term_id": "EFO:0001086",
@@ -488,6 +492,7 @@
         "description": "TCF4 ChIP-seq on A549 cell line treated with 60 nM dexamethasone for 8 hours.",
         "lab": "robert-waterston",
         "status": "released",
+        "date_submitted": "2015-01-20",
         "date_released": "2016-01-01",
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "aca3295c-755b-4495-91cf-8a4c00a0db00"
@@ -495,7 +500,6 @@
     {
         "_test": "worm development series 1",
         "accession": "ENCSR374GSQ",
-        "assay_term_id": "OBI:0001271",
         "assay_term_name": "RNA-seq",
         "award": "U41HG007355",
         "biosample_term_id": "UBERON:0000468",
@@ -505,15 +509,15 @@
         "description": "RNA-seq on fkh-10 deletion strain (RB884) embryos, 80 minutes after egg bleaching.",
         "lab": "robert-waterston",
         "status": "released",
+        "date_submitted": "2015-02-20",
         "date_released": "2016-01-01",
-        "aliases": ["robert-waterston:experiment:RB884_80_1"],
+        "aliases": ["robert-waterston:experiment_RB884_80_1"],
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "25ee48a4-d372-42a8-9366-33a8ca387daf"
     },
     {
         "_test": "worm development series 2",
         "accession": "ENCSR862BAF",
-        "assay_term_id": "OBI:0001271",
         "assay_term_name": "RNA-seq",
         "award": "U41HG007355",
         "biosample_term_id": "UBERON:0000468",
@@ -523,15 +527,15 @@
         "description": "RNA-seq on fkh-10 deletion strain (RB884) embryos, 680 minutes after egg bleaching.",
         "lab": "robert-waterston",
         "status": "released",
+        "date_submitted": "2015-03-20",
         "date_released": "2016-01-01",
-        "aliases": ["robert-waterston:experiment:RB884_680_1"],
+        "aliases": ["robert-waterston:experiment_RB884_680_1"],
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "8669b9e5-5b8e-4814-8625-6fbb29372b84"
     },
     {
         "_test": "worm development series 3 revoked",
         "accession": "ENCSR787DGZ",
-        "assay_term_id": "OBI:0001271",
         "assay_term_name": "RNA-seq",
         "award": "U41HG007355",
         "biosample_term_id": "UBERON:0000468",
@@ -541,15 +545,15 @@
         "description": "RNA-seq on fkh-10 deletion strain (RB884) embryos, 880 minutes after egg bleaching.",
         "lab": "robert-waterston",
         "status": "revoked",
+        "date_submitted": "2015-08-24",
         "date_released": "2016-01-01",
-        "aliases": ["robert-waterston:experiment:RB884_880_1"],
+        "aliases": ["robert-waterston:experiment_RB884_880_1"],
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "785f86d8-9d3e-4c29-b007-b1b615ba6076"
     },
     {
         "_test": "replication timing series 1 (G1b phase)",
         "accession": "ENCSR001REP",
-        "assay_term_id": "OBI:0001920",
         "assay_term_name": "Repli-seq",
         "award": "ENCODE2",
         "biosample_term_id": "EFO:0003072",
@@ -558,6 +562,7 @@
         "description": "Repli-seq on SK-N-SH cell line at G2 phase.",
         "lab": "john-stamatoyannopoulos",
         "status": "released",
+        "date_submitted": "2015-04-20",
         "date_released": "2016-01-01",
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "87958f5b-27f8-4e54-b398-d5bd5ba3e2a0"
@@ -565,7 +570,6 @@
     {
         "_test": "replication timing series 2 (S1 phase)",
         "accession": "ENCSR002REP",
-        "assay_term_id": "OBI:0001920",
         "assay_term_name": "Repli-seq",
         "award": "ENCODE2",
         "biosample_term_id": "EFO:0003072",
@@ -574,6 +578,7 @@
         "description": "Repli-seq on SK-N-SH cell line at S1 phase.",
         "lab": "john-stamatoyannopoulos",
         "status": "released",
+        "date_submitted": "2015-05-20",
         "date_released": "2016-01-01",
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "fe9d124e-9ca1-488f-a1f2-2f9d389562f1"
@@ -581,7 +586,6 @@
     {
         "_test": "replication timing series 3 (S4 phase)",
         "accession": "ENCSR003REP",
-        "assay_term_id": "OBI:0001920",
         "assay_term_name": "Repli-seq",
         "award": "ENCODE2",
         "biosample_term_id": "EFO:0003072",
@@ -590,6 +594,7 @@
         "description": "Repli-seq on SK-N-SH cell line at S2 phase.",
         "lab": "john-stamatoyannopoulos",
         "status": "released",
+        "date_submitted": "2015-06-20",
         "date_released": "2016-01-01",
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "8dc4b825-a5d9-4663-9f1a-cf769c1a0f8c"
@@ -597,7 +602,6 @@
     {
         "_test": "reference epigenome series 1: RNA-seq",
         "accession": "ENCSR001EPI",
-        "assay_term_id": "OBI:0001271",
         "assay_term_name": "RNA-seq",
         "award": "ENCODE2",
         "biosample_term_id": "EFO:0002067",
@@ -606,6 +610,7 @@
         "description": "RNA-seq of K562",
         "lab": "thomas-gingeras",
         "status": "released",
+        "date_submitted": "2015-07-20",
         "date_released": "2016-01-01",
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "dc7baa06-bd53-4b5c-809a-85e0c6bd23d6"
@@ -613,7 +618,6 @@
     {
         "_test": "reference epigenome series 2: WGBS",
         "accession": "ENCSR002EPI",
-        "assay_term_id": "OBI:0001862",
         "assay_term_name": "RRBS",
         "award": "ENCODE2",
         "biosample_term_id": "EFO:0002067",
@@ -622,6 +626,7 @@
         "description": "WGBS of K562",
         "lab": "richard-myers",
         "status": "released",
+        "date_submitted": "2015-08-20",
         "date_released": "2016-01-01",
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "4e0a5e53-fc05-4c9b-8d86-8572c8d227a2"
@@ -629,7 +634,6 @@
     {
         "_test": "reference epigenome series 3: H3K4me1",
         "accession": "ENCSR003EPI",
-        "assay_term_id": "OBI:0000716",
         "assay_term_name": "ChIP-seq",
         "award": "ENCODE2",
         "biosample_term_id": "EFO:0002067",
@@ -639,6 +643,7 @@
         "description": "ChIP-seq of K562",
         "lab": "bradley-bernstein",
         "status": "released",
+        "date_submitted": "2015-09-20",
         "date_released": "2016-01-01",
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "59584793-f9ad-4cb3-a6e9-e2bd6112116b"
@@ -646,7 +651,6 @@
     {
         "_test": "reference epigenome series 4: H3K4me3",
         "accession": "ENCSR004EPI",
-        "assay_term_id": "OBI:0000716",
         "assay_term_name": "ChIP-seq",
         "award": "ENCODE2",
         "biosample_term_id": "EFO:0002067",
@@ -656,6 +660,7 @@
         "description": "ChIP-seq of K562",
         "lab": "bradley-bernstein",
         "status": "released",
+        "date_submitted": "2015-10-20",
         "date_released": "2016-01-01",
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "b7a37424-cc23-4c28-ac0d-5dd311f993f4"
@@ -663,7 +668,6 @@
     {
         "_test": "reference epigenome series 5: H3K27ac",
         "accession": "ENCSR005EPI",
-        "assay_term_id": "OBI:0000716",
         "assay_term_name": "ChIP-seq",
         "award": "ENCODE2",
         "biosample_term_id": "EFO:0002067",
@@ -673,6 +677,7 @@
         "description": "ChIP-seq of K562",
         "lab": "bradley-bernstein",
         "status": "released",
+        "date_submitted": "2015-11-20",
         "date_released": "2016-01-01",
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "36bb66bc-c6d6-4fde-a0b6-b984926ca081"
@@ -680,7 +685,6 @@
     {
         "_test": "reference epigenome series 6: H3K36me3",
         "accession": "ENCSR006EPI",
-        "assay_term_id": "OBI:0000716",
         "assay_term_name": "ChIP-seq",
         "award": "ENCODE2",
         "biosample_term_id": "EFO:0002067",
@@ -690,6 +694,7 @@
         "description": "ChIP-seq of K562",
         "lab": "bradley-bernstein",
         "status": "released",
+        "date_submitted": "2015-12-20",
         "date_released": "2016-01-01",
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "c70c0fb9-08c5-404f-9905-11aac1069b4e"
@@ -697,7 +702,6 @@
     {
         "_test": "reference epigenome series 7: H3K27me3",
         "accession": "ENCSR007EPI",
-        "assay_term_id": "OBI:0000716",
         "assay_term_name": "ChIP-seq",
         "award": "ENCODE2",
         "biosample_term_id": "EFO:0002067",
@@ -707,6 +711,7 @@
         "description": "ChIP-seq of K562",
         "lab": "bradley-bernstein",
         "status": "released",
+        "date_submitted": "2015-01-20",
         "date_released": "2016-01-01",
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "0fd18fa0-eeab-48d1-b249-84eca0ea0d6f"
@@ -714,7 +719,6 @@
     {
         "_test": "reference epigenome series 8: H3K9me3",
         "accession": "ENCSR008EPI",
-        "assay_term_id": "OBI:0000716",
         "assay_term_name": "ChIP-seq",
         "award": "ENCODE2",
         "biosample_term_id": "EFO:0002067",
@@ -724,6 +728,7 @@
         "description": "ChIP-seq of K562",
         "lab": "bradley-bernstein",
         "status": "released",
+        "date_submitted": "2015-02-20",
         "date_released": "2016-01-01",
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "d63e3ea5-86b2-4780-9c07-becbc6c4a63f"
@@ -731,7 +736,6 @@
     {
         "_test": "reference epigenome series 9: control",
         "accession": "ENCSR009EPI",
-        "assay_term_id": "OBI:0000716",
         "assay_term_name": "ChIP-seq",
         "award": "ENCODE2",
         "biosample_term_id": "EFO:0002067",
@@ -741,6 +745,7 @@
         "description": "ChIP-seq of K562",
         "lab": "bradley-bernstein",
         "status": "released",
+        "date_submitted": "2015-03-20",
         "date_released": "2016-01-01",
         "submitted_by": "dignissim.euismod@amet.habitant",
         "uuid": "ce9bb310-d52d-464c-9e2d-c250ab287c7a"
@@ -750,13 +755,12 @@
         "biosample_term_id": "UBERON:0001891",
         "lab": "john-stamatoyannopoulos",
         "assay_term_name": "DNase-seq",
-        "status": "in progress",
+        "status": "started",
         "submitted_by": "/users/4c23ec32-c7c8-4ac0-affb-04befcc881d4/",
         "award": "U54HG007010",
-        "assay_term_id": "OBI:0001853",
         "accession": "ENCSR706IDL",
         "biosample_term_name": "midbrain",
-        "date_released": "2015-08-31",
+        "date_submitted": "2015-08-31",
         "uuid": "529ea39a-58a7-4a9d-8a86-2e5da2e1e1fb",
         "biosample_type": "tissue"
     },
@@ -765,6 +769,7 @@
         "submitted_by": "/users/4c23ec32-c7c8-4ac0-affb-04befcc881d4/",
         "biosample_term_name": "midbrain",
         "status": "released",
+        "date_submitted": "2015-04-20",
         "biosample_type": "tissue",
         "award": "U54HG007010",
         "assay_term_name": "DNase-seq",
@@ -772,7 +777,36 @@
         "date_released": "2015-08-31",
         "biosample_term_id": "UBERON:0001891",
         "accession": "ENCSR751YPU",
-        "uuid": "c62d6a59-a444-49d1-b9f8-c4502c7cc4b2",
-        "assay_term_id": "OBI:0001853"
+        "uuid": "c62d6a59-a444-49d1-b9f8-c4502c7cc4b2"
+    },
+    {
+        "_test": "ISO-seq test",
+        "submitted_by": "/users/4c23ec32-c7c8-4ac0-affb-04befcc881d4/",
+        "biosample_term_name": "midbrain",
+        "status": "released",
+        "date_submitted": "2015-04-20",
+        "biosample_type": "tissue",
+        "award": "U54HG007010",
+        "assay_term_name": "ISO-seq",
+        "lab": "/labs/john-stamatoyannopoulos/",
+        "date_released": "2015-08-31",
+        "biosample_term_id": "UBERON:0001891",
+        "accession": "ENCSR751ISO",
+        "uuid": "6dde71b6-555c-4bed-9bb7-7bec3771893b"
+    },
+    {
+        "_test": "STARR-seq test",
+        "submitted_by": "/users/4c23ec32-c7c8-4ac0-affb-04befcc881d4/",
+        "biosample_term_name": "midbrain",
+        "status": "released",
+        "date_submitted": "2015-04-20",
+        "biosample_type": "tissue",
+        "award": "U54HG007010",
+        "assay_term_name": "STARR-seq",
+        "lab": "/labs/john-stamatoyannopoulos/",
+        "date_released": "2015-08-31",
+        "biosample_term_id": "UBERON:0001891",
+        "accession": "ENCSR751STR",
+        "uuid": "a4460c54-aece-43d2-bf52-dbaaa9298aaa"
     }
 ]

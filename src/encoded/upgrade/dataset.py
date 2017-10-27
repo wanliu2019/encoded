@@ -54,13 +54,17 @@ def dataset_2_3(value, system):
     if 'aliases' in value:
         for alias in value['aliases']:
             if re.match('ucsc_encode_db:hg19-', alias):
-                new_dbxref = alias.replace('ucsc_encode_db:hg19-', 'UCSC-GB-hg19:')
+                new_dbxref = alias.replace(
+                    'ucsc_encode_db:hg19-', 'UCSC-GB-hg19:')
             elif re.match('ucsc_encode_db:mm9-', alias):
-                new_dbxref = alias.replace('ucsc_encode_db:mm9-', 'UCSC-GB-mm9:')
+                new_dbxref = alias.replace(
+                    'ucsc_encode_db:mm9-', 'UCSC-GB-mm9:')
             elif re.match('.*wgEncodeEH.*', alias):
-                new_dbxref = alias.replace('ucsc_encode_db:', 'UCSC-ENCODE-hg19:')
+                new_dbxref = alias.replace(
+                    'ucsc_encode_db:', 'UCSC-ENCODE-hg19:')
             elif re.match('.*wgEncodeEM.*', alias):
-                new_dbxref = alias.replace('ucsc_encode_db:', 'UCSC-ENCODE-mm9:')
+                new_dbxref = alias.replace(
+                    'ucsc_encode_db:', 'UCSC-ENCODE-mm9:')
             else:
                 continue
             value['dbxrefs'].append(new_dbxref)
@@ -150,6 +154,7 @@ def dataset_6_7(value, system):
 @upgrade_step('reference', '7', '8')
 @upgrade_step('project', '7', '8')
 @upgrade_step('publication_data', '7', '8')
+@upgrade_step('matched_set', '7', '8')
 @upgrade_step('ucsc_browser_composite', '7', '8')
 @upgrade_step('organism_development_series', '7', '8')
 @upgrade_step('reference_epigenome', '7', '8')
@@ -181,3 +186,137 @@ def dataset_7_8(value, system):
 
     if 'related_files' in value:
         value['related_files'] = list(set(value['related_files']))
+
+
+@upgrade_step('experiment', '8', '9')
+@upgrade_step('annotation', '8', '9')
+@upgrade_step('reference', '8', '9')
+@upgrade_step('project', '8', '9')
+@upgrade_step('matched_set', '8', '9')
+@upgrade_step('publication_data', '8', '9')
+@upgrade_step('ucsc_browser_composite', '8', '9')
+@upgrade_step('organism_development_series', '8', '9')
+@upgrade_step('reference_epigenome', '8', '9')
+@upgrade_step('replication_timing_series', '8', '9')
+@upgrade_step('treatment_time_series', '8', '9')
+@upgrade_step('treatment_concentration_series', '8', '9')
+def dataset_8_9(value, system):
+    if value['status'] == "in progress":
+        value['status'] = "started"
+    elif value['status'] == "in review":
+        value['status'] = "revoked"
+    elif value['status'] == "release ready":
+        value['status'] = "ready for review"
+    elif value['status'] == "verified":
+        value['status'] = "submitted"
+    elif value['status'] == "preliminary":
+        value['status'] = "proposed"
+
+    if 'annotation_type' in value:
+        if value['annotation_type'] == 'segmentation':
+            value['annotation_type'] = 'chromatin state'
+        elif value['annotation_type'] == 'SAGA':
+            value['annotation_type'] = 'chromatin state'
+        elif value['annotation_type'] == 'enhancer prediction':
+            value['annotation_type'] = 'enhancer predictions'
+        elif value['annotation_type'] == 'encyclopedia':
+            value['annotation_type'] = 'other'
+        elif value['annotation_type'] == 'candidate enhancers':
+            value['annotation_type'] = 'enhancer-like regions'
+        elif value['annotation_type'] == 'candidate promoters':
+            value['annotation_type'] = 'promoter-like regions'
+
+
+@upgrade_step('experiment', '9', '10')
+@upgrade_step('annotation', '9', '10')
+@upgrade_step('reference', '9', '10')
+@upgrade_step('project', '9', '10')
+@upgrade_step('matched_set', '9', '10')
+@upgrade_step('publication_data', '9', '10')
+@upgrade_step('ucsc_browser_composite', '9', '10')
+@upgrade_step('organism_development_series', '9', '10')
+@upgrade_step('reference_epigenome', '9', '10')
+@upgrade_step('replication_timing_series', '9', '10')
+@upgrade_step('treatment_time_series', '9', '10')
+@upgrade_step('treatment_concentration_series', '9', '10')
+def dataset_9_10(value, system):
+    # http://redmine.encodedcc.org/issues/1384
+    if 'description' in value:
+        if value['description']:
+            value['description'] = value['description'].strip()
+        else:
+            del value['description']
+
+    if 'notes' in value:
+        if value['notes']:
+            value['notes'] = value['notes'].strip()
+        else:
+            del value['notes']
+
+    if 'submitter_comment' in value:
+        if value['submitter_comment']:
+            value['submitter_comment'] = value['submitter_comment'].strip()
+        else:
+            del value['submitter_comment']
+
+    # http://redmine.encodedcc.org/issues/2491
+    if 'assay_term_id' in value:
+        del value['assay_term_id']
+
+
+@upgrade_step('experiment', '11', '12')
+@upgrade_step('annotation', '11', '12')
+@upgrade_step('matched_set', '11', '12')
+@upgrade_step('project', '11', '12')
+@upgrade_step('publication_data', '11', '12')
+@upgrade_step('reference', '11', '12')
+@upgrade_step('reference_epigenome', '11', '12')
+@upgrade_step('organism_development_series', '11', '12')
+@upgrade_step('replication_timing_series', '11', '12')
+@upgrade_step('treatment_time_series', '11', '12')
+@upgrade_step('treatment_concentration_series', '11', '12')
+@upgrade_step('ucsc_browser_composite', '11', '12')
+def dataset_11_12(value, system):
+    # http://redmine.encodedcc.org/issues/5049
+    return
+
+
+@upgrade_step('annotation', '12', '13')
+def dataset_12_13(value, system):
+    # http://redmine.encodedcc.org/issues/5178
+    annotation_type = value.get('annotation_type')
+    if annotation_type and annotation_type == 'candidate regulatory regions':
+        value['annotation_type'] = 'candidate regulatory elements'
+
+
+@upgrade_step('annotation', '13', '14')
+@upgrade_step('experiment', '12', '13')
+def dataset_13_14(value, system):
+    # http://redmine.encodedcc.org/issues/4925
+    # http://redmine.encodedcc.org/issues/4900
+    return
+
+
+@upgrade_step('experiment', '13', '14')
+@upgrade_step('annotation', '14', '15')
+@upgrade_step('reference', '12', '13')
+@upgrade_step('project', '12', '13')
+@upgrade_step('matched_set', '12', '13')
+@upgrade_step('publication_data', '12', '13')
+@upgrade_step('ucsc_browser_composite', '12', '13')
+@upgrade_step('organism_development_series', '12', '13')
+@upgrade_step('reference_epigenome', '12', '13')
+@upgrade_step('replication_timing_series', '12', '13')
+@upgrade_step('treatment_time_series', '12', '13')
+@upgrade_step('treatment_concentration_series', '12', '13')
+def dataset_14_15(value, system):
+    if value['status'] == "proposed":
+        value['status'] = "started"
+
+
+@upgrade_step('annotation', '15', '16')
+def annotation_15_16(value, system):
+    if value['annotation_type'] in ['enhancer-like regions', 'promoter-like regions']:
+        value['annotation_type'] = 'candidate regulatory elements'
+    if value['annotation_type'] == 'DNase master peaks':
+        value['annotation_type'] = 'representative DNase hypersensitivity sites'

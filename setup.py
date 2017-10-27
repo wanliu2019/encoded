@@ -3,10 +3,11 @@ import sys
 from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(here, 'README.rst')).read()
+README = open(os.path.join(here, 'README.md')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
 
 requires = [
+    'snovault',
     'Pillow',
     'PyBrowserID',
     'SQLAlchemy>=1.0.0b1',
@@ -102,6 +103,7 @@ setup(
 
         [paste.composite_factory]
         indexer = snovault.elasticsearch.es_index_listener:composite
+        secondaryindexer = snovault.elasticsearch.es_index_listener:composite
 
         [paste.filter_app_factory]
         memlimit = encoded.memlimit:filter_app

@@ -5,7 +5,7 @@
         "lab": "j-michael-cherry",
         "organism": "dmelanogaster",
         "uuid": "ea3bec10-d473-11e3-9c1a-0800200c9a66",
-        "dbxrefs": ["bloomington:5","dssc:451-56"]
+        "dbxrefs": ["BDSC:5","DSSC:451-56", "FlyBase:FBst0000005"]
 
     },
     {
@@ -13,8 +13,6 @@
         "award": "U41HG006992",
         "lab": "j-michael-cherry",
         "organism": "dmelanogaster",
-        "constructs": ["893d806f-3a88-43eb-afdf-dcc16c79ee45"],
-        "mutated_gene": "cad-dmelanogaster",
         "uuid": "c9a34c9e-a19a-4bf5-8b50-5d7c39d190b1"
     },
     {
@@ -24,11 +22,13 @@
         "organism": "dmelanogaster",
         "aliases": ["bloomington:38626"],
         "strain_background": "VK00033",
+        "genetic_modifications": ["ENCGM162RDA"],
         "genotype": "w[1118]; PBac{y[+mDint2] w[+mC]=ab-GFP.FLAG}VK00033",
-        "url": "http://flystocks.bio.indiana.edu/Reports/38626.html",
         "documents": [
-            "ENCODE:sample_strain_generation_protocol"
+            "encode:sample_strain_generation_protocol"
         ],
-        "uuid": "094a484e-817c-4cb3-a8dd-9ea2c3c1067b"
+        "parent_strains": ["ENCDO180XXX", "ENCDO242AAA"],
+        "uuid": "094a484e-817c-4cb3-a8dd-9ea2c3c1067b",
+        "dbxrefs": ["FlyBase:FBst0038626", "BDSC:38626"]
     }
 ]

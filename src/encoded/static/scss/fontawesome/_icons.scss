@@ -85,10 +85,10 @@
 //.#{$fa-css-prefix}-fast-forward:before { content: $fa-var-fast-forward; }
 //.#{$fa-css-prefix}-step-forward:before { content: $fa-var-step-forward; }
 //.#{$fa-css-prefix}-eject:before { content: $fa-var-eject; }
-//.#{$fa-css-prefix}-chevron-left:before { content: $fa-var-chevron-left; }
-//.#{$fa-css-prefix}-chevron-right:before { content: $fa-var-chevron-right; }
+.#{$fa-css-prefix}-chevron-left:before { content: $fa-var-chevron-left; }
+.#{$fa-css-prefix}-chevron-right:before { content: $fa-var-chevron-right; }
 //.#{$fa-css-prefix}-plus-circle:before { content: $fa-var-plus-circle; }
-//.#{$fa-css-prefix}-minus-circle:before { content: $fa-var-minus-circle; }
+.#{$fa-css-prefix}-minus-circle:before { content: $fa-var-minus-circle; }
 .#{$fa-css-prefix}-times-circle:before { content: $fa-var-times-circle; }
 .#{$fa-css-prefix}-check-circle:before { content: $fa-var-check-circle; }
 .#{$fa-css-prefix}-question-circle:before { content: $fa-var-question-circle; }
@@ -130,8 +130,8 @@
 //.#{$fa-css-prefix}-arrows-v:before { content: $fa-var-arrows-v; }
 //.#{$fa-css-prefix}-arrows-h:before { content: $fa-var-arrows-h; }
 //.#{$fa-css-prefix}-bar-chart-o:before { content: $fa-var-bar-chart-o; }
-//.#{$fa-css-prefix}-twitter-square:before { content: $fa-var-twitter-square; }
-//.#{$fa-css-prefix}-facebook-square:before { content: $fa-var-facebook-square; }
+.#{$fa-css-prefix}-twitter-square:before { content: $fa-var-twitter-square; }
+.#{$fa-css-prefix}-facebook-square:before { content: $fa-var-facebook-square; }
 //.#{$fa-css-prefix}-camera-retro:before { content: $fa-var-camera-retro; }
 //.#{$fa-css-prefix}-key:before { content: $fa-var-key; }
 //.#{$fa-css-prefix}-gears:before,
@@ -204,7 +204,7 @@
 //.#{$fa-css-prefix}-truck:before { content: $fa-var-truck; }
 //.#{$fa-css-prefix}-pinterest:before { content: $fa-var-pinterest; }
 //.#{$fa-css-prefix}-pinterest-square:before { content: $fa-var-pinterest-square; }
-//.#{$fa-css-prefix}-google-plus-square:before { content: $fa-var-google-plus-square; }
+.#{$fa-css-prefix}-google-plus-square:before { content: $fa-var-google-plus-square; }
 //.#{$fa-css-prefix}-google-plus:before { content: $fa-var-google-plus; }
 //.#{$fa-css-prefix}-money:before { content: $fa-var-money; }
 .#{$fa-css-prefix}-caret-down:before { content: $fa-var-caret-down; }

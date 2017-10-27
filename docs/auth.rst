@@ -30,7 +30,7 @@ We lookup the user object and add groups based on the properties:
 
 * groups [<string>..] - global groups like 'admin'. Generates: `group.admin`.
 * submits_for: [lab..] - allow editing based on object.lab property. Generates: `submits_for.<lab-uuid>`.
-* viewing_groups: [<string..>] - allow viewing of in progress data based on object.award.viewing_group (ENCODE, GGR, REMC.) Generates: `viewing_group.ENCODE`.
+* viewing_groups: [<string..>] - allow viewing of in progress data based on object.award.viewing_group (ENCODE3, ENCODE4, GGR, REMC.) Generates: `viewing_group.ENCODE`.
 
 .. _authorization.py: ../src/encoded/authorization.py
 
@@ -51,6 +51,11 @@ The ACL authorization policy will then lookup the Access Control List on the exp
 We define an `__acl__` method on the EncodedRoot object (root.py_), Collection and Item objects (base.py_.)
 The `__acl__` method for an Item returns a different ACL list depending on the object's 'status'.
 This way we allow lab submitters to edit their own 'in progress' objects but not 'released' objects.
+
+Schema-Based Restrictions
+=========================
+
+If you specify in the JSON schema for a property of an an object:  "permissions": "import-items" then only admins may change these values independend of submitter.
 
 
 .. _base.py: ../src/encoded/types/base.py

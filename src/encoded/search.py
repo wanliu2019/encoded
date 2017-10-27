@@ -11,18 +11,10 @@ from pyramid.httpexceptions import HTTPBadRequest
 from pyramid.security import effective_principals
 from urllib.parse import urlencode
 from collections import OrderedDict
+from .visualization import vis_format_url
+import copy
 
 
-_ASSEMBLY_MAPPER = {
-    'GRCh38-minimal': 'hg38',
-    'GRCh38': 'hg38',
-    'GRCh37': 'hg19',
-    'GRCm38': 'mm10',
-    'GRCm37': 'mm9',
-    'BDGP6': 'dm4',
-    'BDGP5': 'dm3',
-    'WBcel235': 'WBcel235'
-}
 
 CHAR_COUNT = 32
 
@@ -31,21 +23,18 @@ def includeme(config):
     config.add_route('search', '/search{slash:/?}')
     config.add_route('report', '/report{slash:/?}')
     config.add_route('matrix', '/matrix{slash:/?}')
+    config.add_route('news', '/news/')
+    config.add_route('audit', '/audit/')
     config.scan(__name__)
 
 
 sanitize_search_string_re = re.compile(r'[\\\+\-\&\|\!\(\)\{\}\[\]\^\~\:\/\\\*\?]')
 
-hgConnect = ''.join([
-    'http://genome.ucsc.edu/cgi-bin/hgTracks',
-    '?hubClear=',
-])
-
 audit_facets = [
     ('audit.ERROR.category', {'title': 'Audit category: ERROR'}),
     ('audit.NOT_COMPLIANT.category', {'title': 'Audit category: NOT COMPLIANT'}),
     ('audit.WARNING.category', {'title': 'Audit category: WARNING'}),
-    ('audit.DCC_ACTION.category', {'title': 'Audit category: DCC ACTION'})
+    ('audit.INTERNAL_ACTION.category', {'title': 'Audit category: DCC ACTION'})
 ]
 
 
@@ -185,7 +174,8 @@ def get_search_fields(request, doc_types):
     """
     Returns set of columns that are being searched and highlights
     """
-    fields = {'uuid'}
+
+    fields = {'uuid', 'unique_keys.*'}
     highlights = {}
     types = request.registry[TYPES]
     for doc_type in doc_types:
@@ -223,6 +213,10 @@ def list_visible_columns_for_schemas(request, schemas):
             if field in columns:
                 limited_columns[field] = columns[field]
             else:
+                # We don't currently traverse to other schemas for embedded
+                # objects to find property titles. In this case we'll just
+                # show the field's dotted path for now.
+                limited_columns[field] = {'title': field}
                 for schema in schemas:
                     if field in schema['properties']:
                         limited_columns[field] = {
@@ -254,10 +248,51 @@ def list_result_fields(request, doc_types):
         schemas = [types[doc_type].schema for doc_type in doc_types]
         columns = list_visible_columns_for_schemas(request, schemas)
         fields.update('embedded.' + column for column in columns)
+
+    # Ensure that 'audit' field is requested with _source in the ES query
+    if request.__parent__ and '/metadata/' in request.__parent__.url and request.has_permission('search_audit'):
+        fields.add('audit.*')
+
     return fields
 
 
-def set_filters(request, query, result):
+def build_terms_filter(field, terms):
+    if field.endswith('!'):
+        field = field[:-1]
+        if not field.startswith('audit'):
+            field = 'embedded.' + field + '.raw'
+        # Setting not filter instead of terms filter
+        if terms == ['*']:
+            return {
+                'missing': {
+                    'field': field,
+                }
+            }
+        else:
+            return {
+                'not': {
+                    'terms': {
+                        field: terms,
+                    }
+                }
+            }
+    else:
+        if not field.startswith('audit'):
+            field = 'embedded.' + field + '.raw'
+        if terms == ['*']:
+            return {
+                'exists': {
+                    'field': field,
+                }
+            }
+        else:
+            return {
+                'terms': {
+                    field: terms,
+                },
+            }
+
+def set_filters(request, query, result, static_items=None):
     """
     Sets filters in the query
     """
@@ -308,6 +343,9 @@ def set_filters(request, query, result):
 
         if field == 'searchTerm':
             continue
+
+        # Add to list of active filters
+        used_filters[field] = terms
 
         # Add filter to query
         if field.endswith('!'):
@@ -421,7 +459,7 @@ def set_facets(facets, used_filters, principals, doc_types):
     return aggs
 
 
-def format_results(request, hits):
+def format_results(request, hits, result=None):
     """
     Loads results to pass onto UI
     """
@@ -431,21 +469,37 @@ def format_results(request, hits):
     else:
         frame = request.params.get('frame')
 
+    # Request originating from metadata generation will skip to
+    # partion of the code that adds audit  object to result items
+    if request.__parent__ and '/metadata/' in request.__parent__.url:
+        frame = ''
+
+    any_released = False  # While formatting, figure out if any are released.
+
     if frame in ['embedded', 'object']:
         for hit in hits:
+            if not any_released and hit['_source'][frame].get('status', 'released') == 'released':
+                any_released = True
             yield hit['_source'][frame]
-        return
+    else:
+        # columns
+        for hit in hits:
+            item = hit['_source']['embedded']
+            if not any_released and item.get('status','released') == 'released':
+                any_released = True # Not exp? 'released' to do the least harm
+            if 'audit' in hit['_source']:
+                item['audit'] = hit['_source']['audit']
+            if 'highlight' in hit:
+                item['highlight'] = {}
+                for key in hit['highlight']:
+                    item['highlight'][key[9:]] = list(set(hit['highlight'][key]))
+            yield item
 
-    # columns
-    for hit in hits:
-        item = hit['_source']['embedded']
-        if 'audit' in hit['_source']:
-            item['audit'] = hit['_source']['audit']
-        if 'highlight' in hit:
-            item['highlight'] = {}
-            for key in hit['highlight']:
-                item['highlight'][key[9:]] = list(set(hit['highlight'][key]))
-        yield item
+    # After all are yielded, it may not be too late to change this result setting
+    #if not any_released and result is not None and 'batch_hub' in result:
+    #    del result['batch_hub']
+    if not any_released and result is not None and 'visualize_batch' in result:
+        del result['visualize_batch']
 
 
 def search_result_actions(request, doc_types, es_results, position=None):
@@ -454,27 +508,41 @@ def search_result_actions(request, doc_types, es_results, position=None):
 
     # generate batch hub URL for experiments
     # TODO we could enable them for Datasets as well here, but not sure how well it will work
-    if doc_types == ['Experiment']:
+    if doc_types == ['Experiment'] or doc_types == ['Annotation']:
+        viz = {}
         for bucket in aggregations['assembly']['assembly']['buckets']:
             if bucket['doc_count'] > 0:
                 assembly = bucket['key']
-                ucsc_assembly = _ASSEMBLY_MAPPER.get(assembly, assembly)
+                if assembly in viz:  # mm10 and mm10-minimal resolve to the same thing
+                    continue
                 search_params = request.query_string.replace('&', ',,')
-                if not request.params.getall('assembly') or assembly in request.params.getall('assembly'):
+                if not request.params.getall('assembly') \
+                or assembly in request.params.getall('assembly'):
                     # filter  assemblies that are not selected
-                    hub = request.route_url('batch_hub',
-                                            search_params=search_params,
-                                            txt='hub.txt')
+                    hub_url = request.route_url('batch_hub',search_params=search_params,
+                                                txt='hub.txt')
+                    browser_urls = {}
+                    pos = None
                     if 'region-search' in request.url and position is not None:
-                        actions.setdefault('batch_hub', {})[assembly] = hgConnect + hub + '&db=' + ucsc_assembly + '&position={}'.format(position)
-                    else:
-                        actions.setdefault('batch_hub', {})[assembly] = hgConnect + hub + '&db=' + ucsc_assembly 
+                        pos = position
+                    ucsc_url = vis_format_url("ucsc", hub_url, assembly, pos)
+                    if ucsc_url is not None:
+                        browser_urls['UCSC'] = ucsc_url
+                    ensembl_url = vis_format_url("ensembl", hub_url, assembly, pos)
+                    if ensembl_url is not None:
+                        browser_urls['Ensembl'] = ensembl_url
+                    if browser_urls:
+                        viz[assembly] = browser_urls
+                        #actions.setdefault('visualize_batch', {})[assembly] = browser_urls  # formerly 'batch_hub'
+        if viz:
+            actions.setdefault('visualize_batch',viz)
 
     # generate batch download URL for experiments
     # TODO we could enable them for Datasets as well here, but not sure how well it will work
     # batch download disabled for region-search results
     if '/region-search/' not in request.url:
-        if doc_types == ['Experiment'] and any(
+        #if (doc_types == ['Experiment'] or doc_types == ['Annotation']) and any(
+        if (doc_types == ['Experiment']) and any(
                 bucket['doc_count'] > 0
                 for bucket in aggregations['files-file_type']['files-file_type']['buckets']):
             actions['batch_download'] = request.route_url(
@@ -510,7 +578,8 @@ def format_facets(es_results, facets, used_filters, schemas, total):
 
     aggregations = es_results['aggregations']
     used_facets = set()
-    for field, facet in facets:
+    exists_facets = set()
+    for field, options in facets:
         used_facets.add(field)
         agg_name = field.replace('.', '-')
         if agg_name in aggregations:
@@ -560,24 +629,29 @@ def normalize_query(request):
     return '?' + qs if qs else ''
 
 
-def iter_long_json(name, iterable, **other):
+def iter_long_json(name, iterable, other):
     import json
 
-    before = (json.dumps(other)[:-1] + ',') if other else '{'
-    yield before + json.dumps(name) + ':['
+    start = None
 
+    # Note: by yielding @graph (iterable) first, then the contents of result (other) *may* be altered based upon @graph
     it = iter(iterable)
     try:
         first = next(it)
     except StopIteration:
         pass
     else:
-        yield json.dumps(first)
+        #yield json.dumps(first)
+        start = '{' + json.dumps(name) + ':['
+        yield start + json.dumps(first)
         for value in it:
             yield ',' + json.dumps(value)
 
-    yield ']}'
-
+    if start is None: # Nothing has bee yielded yet
+        yield json.dumps(other)
+    else:
+        other_stuff = (',' + json.dumps(other)[1:-1]) if other else ''
+        yield ']' + other_stuff + '}'
 
 @view_config(route_name='search', request_method='GET', permission='search')
 def search(context, request, search_type=None, return_generator=False):
@@ -688,7 +762,7 @@ def search(context, request, search_type=None, return_generator=False):
 
 
     # Set sort order
-    has_sort = set_sort_order(request, search_term, types, doc_types, query, result)
+    set_sort_order(request, search_term, types, doc_types, query, result)
 
     # Setting filters
     used_filters = set_filters(request, query, result)
@@ -700,16 +774,15 @@ def search(context, request, search_type=None, return_generator=False):
     if len(doc_types) == 1 and 'facets' in types[doc_types[0]].schema:
         facets.extend(types[doc_types[0]].schema['facets'].items())
 
-    # Display all audits if logged in, or all but DCC_ACTION if logged out
+    # Display all audits if logged in, or all but INTERNAL_ACTION if logged out
     for audit_facet in audit_facets:
-        if search_audit and 'group.submitter' in principals or 'DCC_ACTION' not in audit_facet[0]:
+        if search_audit and 'group.submitter' in principals or 'INTERNAL_ACTION' not in audit_facet[0]:
             facets.append(audit_facet)
 
     query['aggs'] = set_facets(facets, used_filters, principals, doc_types)
 
     # Decide whether to use scan for results.
     do_scan = size is None or size > 1000
-
     # Execute the query
     if do_scan:
         es_results = es.search(body=query, index=es_index, search_type='count')
@@ -720,7 +793,7 @@ def search(context, request, search_type=None, return_generator=False):
 
     schemas = (types[item_type].schema for item_type in doc_types)
     result['facets'] = format_facets(
-        es_results, facets, used_filters, schemas, total)
+        es_results, facets, used_filters, schemas, total, principals)
 
     # Add batch actions
     result.update(search_result_actions(request, doc_types, es_results))
@@ -739,10 +812,9 @@ def search(context, request, search_type=None, return_generator=False):
         return result if not return_generator else []
 
     result['notification'] = 'Success'
-
     # Format results for JSON-LD
     if not do_scan:
-        graph = format_results(request, es_results['hits']['hits'])
+        graph = format_results(request, es_results['hits']['hits'], result)
         if return_generator:
             return graph
         else:
@@ -752,10 +824,12 @@ def search(context, request, search_type=None, return_generator=False):
     # Scan large result sets.
     del query['aggs']
     if size is None:
-        hits = scan(es, query=query, index=es_index, preserve_order=has_sort)
+        # preserve_order=True has unexpected results in clustered environment
+        # https://github.com/elastic/elasticsearch-py/blob/master/elasticsearch/helpers/__init__.py#L257
+        hits = scan(es, query=query, index=es_index, preserve_order=False)
     else:
-        hits = scan(es, query=query, index=es_index, from_=from_, size=size, preserve_order=has_sort)
-    graph = format_results(request, hits)
+        hits = scan(es, query=query, index=es_index, from_=from_, size=size, preserve_order=False)
+    graph = format_results(request, hits, result)
 
     # Support for request.embed() and `return_generator`
     if request.__parent__ is not None or return_generator:
@@ -767,7 +841,7 @@ def search(context, request, search_type=None, return_generator=False):
 
     # Stream response using chunked encoding.
     # XXX BeforeRender event listeners not called.
-    app_iter = iter_long_json('@graph', graph, **result)
+    app_iter = iter_long_json('@graph', graph, result)
     request.response.content_type = 'application/json'
     if str is bytes:  # Python 2 vs 3 wsgi differences
         request.response.app_iter = app_iter  # Python 2
@@ -792,9 +866,24 @@ def collection_view_listing_es(context, request):
 
 @view_config(route_name='report', request_method='GET', permission='search')
 def report(context, request):
-    types = request.params.getall('type')
-    if len(types) != 1:
+    doc_types = request.params.getall('type')
+    if len(doc_types) != 1:
         msg = 'Report view requires specifying a single type.'
+        raise HTTPBadRequest(explanation=msg)
+
+    types = request.registry[TYPES]
+
+    # Get the subtypes of the requested type
+    try:
+        sub_types = types[doc_types[0]].subtypes
+    except KeyError:
+        # Raise an error for an invalid type
+        msg = "Invalid type: " + doc_types[0]
+        raise HTTPBadRequest(explanation=msg)
+
+    # Raise an error if the requested type has subtypes.
+    if len(sub_types) > 1:
+        msg = 'Report view requires a type with no child types.'
         raise HTTPBadRequest(explanation=msg)
 
     # Ignore large limits, which make `search` return a Response
@@ -849,7 +938,10 @@ def matrix(context, request):
         msg = 'No matrix configured for type: {}'.format(item_type)
         raise HTTPBadRequest(explanation=msg)
     schema = type_info.schema
-    result['title'] = type_info.name + ' Matrix'
+    if type_info.name is 'Annotation':
+        result['title'] = 'Encyclopedia'
+    else:
+        result['title'] = type_info.name + ' Matrix'
 
     matrix = result['matrix'] = type_info.factory.matrix.copy()
     matrix['x']['limit'] = request.params.get('x.limit', 20)
@@ -901,9 +993,9 @@ def matrix(context, request):
     facets = [(field, facet) for field, facet in schema['facets'].items() if
               field in matrix['x']['facets'] or field in matrix['y']['facets']]
 
-    # Display all audits if logged in, or all but DCC_ACTION if logged out
+    # Display all audits if logged in, or all but INTERNAL_ACTION if logged out
     for audit_facet in audit_facets:
-        if search_audit and 'group.submitter' in principals or 'DCC_ACTION' not in audit_facet[0]:
+        if search_audit and 'group.submitter' in principals or 'INTERNAL_ACTION' not in audit_facet[0]:
             facets.append(audit_facet)
 
     query['aggs'] = set_facets(facets, used_filters, principals, doc_types)
@@ -948,7 +1040,7 @@ def matrix(context, request):
 
     # Format facets for results
     result['facets'] = format_facets(
-        es_results, facets, used_filters, (schema,), total)
+        es_results, facets, used_filters, (schema,), total, principals)
 
     def summarize_buckets(matrix, x_buckets, outer_bucket, grouping_fields):
         group_by = grouping_fields[0]
@@ -975,6 +1067,488 @@ def matrix(context, request):
         y_groupings + [x_grouping])
 
     result['matrix']['y'][y_groupings[0]] = aggregations['matrix'][y_groupings[0]]
+    result['matrix']['x'].update(aggregations['matrix']['x'])
+
+    # Add batch actions
+    result.update(search_result_actions(request, doc_types, es_results))
+
+    # Adding total
+    result['total'] = es_results['hits']['total']
+    if result['total']:
+        result['notification'] = 'Success'
+    else:
+        # http://googlewebmastercentral.blogspot.com/2014/02/faceted-navigation-best-and-5-of-worst.html
+        request.response.status_code = 404
+        result['notification'] = 'No results found'
+
+    return result
+
+@view_config(route_name='news', request_method='GET', permission='search')
+def news(context, request):
+    """
+    Return search results for news Page items.
+    """
+    types = request.registry[TYPES]
+    es = request.registry[ELASTIC_SEARCH]
+    es_index = request.registry.settings['snovault.elasticsearch.index']
+    search_base = normalize_query(request)
+    principals = effective_principals(request)
+
+    # Set up initial results metadata; we'll add the search results to them later.
+    result = {
+        '@context': request.route_path('jsonld_context'),
+        '@id': '/news/' + search_base,
+        '@type': ['News'],
+        'filters': [],
+        'notification': '',
+    }
+
+    # We have no query string to specify a type, but we know we want 'Page' for news items.
+    doc_types = ['Page']
+
+    # Get the fields we want to receive from the search.
+    search_fields, highlights = get_search_fields(request, doc_types)
+
+    # Build filtered query for Page items for news.
+    query = get_filtered_query('*',
+                               search_fields,
+                               sorted(list_result_fields(request, doc_types)),
+                               principals,
+                               doc_types)
+
+    # Set sort order to sort by date_created.
+    sort = OrderedDict()
+    result_sort = OrderedDict()
+    sort['embedded.date_created.raw'] = result_sort['date_created'] = {
+        'order': 'desc',
+        'ignore_unmapped': True,
+    }
+    query['sort'] = sort
+    result['sort'] = result_sort
+
+    # Set filters; has side effect of setting result['filters']. We add some static terms since we
+    # have search parameters not specified in the query string.
+    used_filters = set_filters(request, query, result, [('type', 'Page'), ('news', 'true'), ('status', 'released')])
+
+    # Build up the facets to search.
+    facets = []
+    if len(doc_types) == 1 and 'facets' in types[doc_types[0]].schema:
+        facets.extend(types[doc_types[0]].schema['facets'].items())
+
+    # Perform the search of news items.
+    query['aggs'] = set_facets(facets, used_filters, principals, doc_types)
+    es_results = es.search(body=query, index=es_index, from_=0, size=25)
+    total = es_results['hits']['total']
+
+    # Return 404 if no results found.
+    if not total:
+        # http://googlewebmastercentral.blogspot.com/2014/02/faceted-navigation-best-and-5-of-worst.html
+        request.response.status_code = 404
+        result['notification'] = 'No results found'
+        result['@graph'] = []
+        return result
+
+    # At this stage, we know we have good results.
+    result['notification'] = 'Success'
+    result['total'] = total
+
+    # Place the search results into the @graph property.
+    graph = format_results(request, es_results['hits']['hits'], result)
+    result['@graph'] = list(graph)
+
+    # Insert the facet data into the results.
+    types = request.registry[TYPES]
+    schemas = [types[doc_type].schema for doc_type in doc_types]
+    result['facets'] = format_facets(es_results, facets, used_filters, schemas, total, principals)
+
+    return result
+
+@view_config(route_name='audit', request_method='GET', permission='search')
+def audit(context, request):
+    """
+    Return search results aggregated by x and y buckets for building a matrix display.
+    """
+    search_base = normalize_query(request)
+    result = {
+        '@context': request.route_path('jsonld_context'),
+        '@id': request.route_path('audit', slash='/') + search_base,
+        '@type': ['AuditMatrix'],
+        'filters': [],
+        'notification': '',
+    }
+    search_audit = request.has_permission('search_audit')
+
+    doc_types = request.params.getall('type')
+    if len(doc_types) != 1:
+        msg = 'Search result matrix currently requires specifying a single type.'
+        raise HTTPBadRequest(explanation=msg)
+    item_type = doc_types[0]
+    types = request.registry[TYPES]
+    if item_type not in types:
+        msg = 'Invalid type: {}'.format(item_type)
+        raise HTTPBadRequest(explanation=msg)
+    type_info = types[item_type]
+    if not hasattr(type_info.factory, 'matrix'):
+        msg = 'No matrix configured for type: {}'.format(item_type)
+        raise HTTPBadRequest(explanation=msg)
+    schema = type_info.schema
+    if type_info.name is 'Annotation':
+        result['title'] = 'Encyclopedia'
+    else:
+        result['title'] = type_info.name + ' Matrix'
+
+    # Because the formatting of the query edits the sub-objects of the matrix, we need to
+    # deepcopy the matrix so the original type_info.factory.matrix is not modified, allowing
+    # /matrix to get the correct data and to not be able to access the /audit data.
+    temp_matrix = copy.deepcopy(type_info.factory.matrix)
+    matrix = result['matrix'] = temp_matrix
+    matrix['x']['limit'] = request.params.get('x.limit', 20)
+    matrix['y']['limit'] = request.params.get('y.limit', 5)
+    matrix['search_base'] = request.route_path('search', slash='/') + search_base
+    matrix['clear_matrix'] = request.route_path('audit', slash='/') + '?type=' + item_type
+
+    result['views'] = [
+        {
+            'href': request.route_path('search', slash='/') + search_base,
+            'title': 'View results as list',
+            'icon': 'list-alt',
+        },
+        {
+            'href': request.route_path('report', slash='/') + search_base,
+            'title': 'View tabular report',
+            'icon': 'table',
+        }
+    ]
+
+    principals = effective_principals(request)
+    es = request.registry[ELASTIC_SEARCH]
+    es_index = request.registry.settings['snovault.elasticsearch.index']
+
+    search_term = prepare_search_term(request)
+
+    search_fields, highlights = get_search_fields(request, doc_types)
+
+    # Builds filtered query which supports multiple facet selection
+    query = get_filtered_query(search_term,
+                               search_fields,
+                               [],
+                               principals,
+                               doc_types)
+
+    if search_term == '*':
+        query['query']['match_all'] = {}
+        del query['query']['query_string']
+
+    # Setting filters.
+    # Rather than setting them at the top level of the query
+    # we collect them for use in aggregations later.
+    query_filters = query.pop('filter')
+    filter_collector = {'filter': query_filters}
+    used_filters = set_filters(request, filter_collector, result)
+    filters = filter_collector['filter']['and']['filters']
+
+    # Adding facets to the query
+    facets = [(field, facet) for field, facet in schema['facets'].items() if
+              field in matrix['x']['facets'] or field in matrix['y']['facets']]
+
+    # Display all audits if logged in, or all but INTERNAL_ACTION if logged out
+    for audit_facet in audit_facets:
+        if search_audit and 'group.submitter' in principals or 'INTERNAL_ACTION' not in audit_facet[0]:
+            facets.append(audit_facet)
+
+    # To get list of audit categories from facets
+    audit_field_list_copy = []
+    audit_field_list = []
+    for item in facets:
+        if item[0].rfind('audit.') > -1:
+            audit_field_list.append(item)
+
+    audit_field_list_copy = audit_field_list.copy()
+
+    # Gets just the fields from the tuples from facet data
+    for item in audit_field_list_copy: # for each audit label
+        temp = item[0]
+        audit_field_list[audit_field_list.index(item)] = temp #replaces list with just audit field
+
+    query['aggs'] = set_facets(facets, used_filters, principals, doc_types)
+
+    # Group results in 2 dimensions
+    x_grouping = matrix['x']['group_by']
+    y_groupings = audit_field_list
+
+    # Creates a list of fields used in no audit row
+    no_audits_groupings = ['no.audit.error', 'no.audit.not_compliant', 'no.audit.warning']
+
+    x_agg = {
+        "terms": {
+            "field": 'embedded.' + x_grouping + '.raw',
+            "size": 0,  # no limit
+        },
+    }
+
+    # aggs query for audit category rows
+    aggs = {
+        'audit.ERROR.category': {
+            'aggs': {
+                x_grouping: x_agg
+            },
+            'terms': {
+                'field': 'audit.ERROR.category', 'size': 0
+            }
+        },
+        'audit.WARNING.category': {
+            'aggs': {
+                x_grouping: x_agg
+            },
+            'terms': {
+                'field': 'audit.WARNING.category', 'size': 0
+            }
+        },
+        'audit.NOT_COMPLIANT.category': {
+            'aggs': {
+                x_grouping: x_agg
+            },
+            'terms': {
+                'field': 'audit.NOT_COMPLIANT.category', 'size': 0
+            }
+        }
+
+    }
+
+    # This is a nested query with error as the top most level and warning as the innermost level.
+    # It allows for there to be multiple missing fields in the query.
+    # To construct this we go through the no_audits_groupings backwards and construct the query
+    # from the inside out.
+    temp = {}
+    temp_copy = {}
+    for group in reversed(no_audits_groupings):
+        temp = {
+            "missing": {
+                "field": audit_field_list[no_audits_groupings.index(group)]
+            },
+            "aggs": {
+                x_grouping: x_agg
+            },
+        }
+        # If not the last element in no_audits_groupings then add the inner query
+        # inside the next category query. Therefore, as temp is updated, it sets the old temp,
+        # which is now temp_copy, within itself. This creates the nested structure.
+        if (no_audits_groupings.index(group)+1) < len(no_audits_groupings):
+            temp["aggs"][no_audits_groupings[(no_audits_groupings.index(group)+1)]] = temp_copy
+        temp_copy = copy.deepcopy(temp)
+
+    # This adds the outermost grouping label to temp.
+    update_temp = {}
+    update_temp[no_audits_groupings[0]] = temp
+
+    # Aggs query gets updated with no audits queries.
+    aggs.update(update_temp)
+
+    # If internal action data is able to be seen in facets (if logged in) then add it to aggs for
+    # both: 1) an audit category row for Internal Action and 2) the no audits row as innermost
+    # level of nested query to create a no audits at all row within no audits.
+    # Additionally, add it to the no_audits_groupings list to be used in summarize_no_audits later.
+    if "audit.INTERNAL_ACTION.category" in facets[len(facets)-1]:
+        aggs['audit.INTERNAL_ACTION.category'] = {
+            'aggs': {
+                x_grouping: x_agg
+            },
+            'terms': {
+                'field': 'audit.INTERNAL_ACTION.category', 'size': 0
+            }
+        }
+        aggs['no.audit.error']['aggs']['no.audit.not_compliant']['aggs']['no.audit.warning']['aggs']['no.audit.internal_action'] = {
+                            "missing": {
+                                "field": "audit.INTERNAL_ACTION.category"
+                            },
+                            "aggs": {
+                                x_grouping: x_agg
+                            }
+        }
+        no_audits_groupings.append("no.audit.internal_action")
+
+    aggs['x'] = x_agg
+    query['aggs']['matrix'] = {
+        "filter": {
+            "bool": {
+                "must": filters,
+            }
+        },
+        "aggs": aggs,
+    }
+
+    # Execute the query
+    es_results = es.search(body=query, index=es_index, search_type='count')
+
+    # Format matrix for results
+    aggregations = es_results['aggregations']
+    result['matrix']['doc_count'] = total = aggregations['matrix']['doc_count']
+    result['matrix']['max_cell_doc_count'] = 0
+
+    # Format facets for results
+    result['facets'] = format_facets(
+        es_results, facets, used_filters, (schema,), total, principals)
+
+    # For each audit category row.
+    # Convert Elasticsearch returned matrix search data to a form usable by the front end matrix
+    # code, using only the 'matrix' object within the search data. It contains matrix search
+    # results in 'bucket' arrays, with the exact terms being defined in the .py file for the object
+    # we're querying in the object's 'matrix' property.
+    #
+    # matrix (dictionary): 'matrix' object within the Elasticsearch matrix search results,
+    #        containing all the data to render the matrix and its headers, but not the facets that
+    #        appear along the top and bottom.
+    # x_buckets (dictionary): 'x' object within the Elasticsearch matrix search results, containing
+    #        the headers that give titles to each column of the chart, as well as summary counts
+    #        we don't currently use on the front end.
+    # outer_bucket (list): search result bucket containing the term from which to group by.
+    # grouping_fields (list): List of audit categories that is hard coded above.
+
+    def summarize_buckets(matrix, x_buckets, outer_bucket, grouping_fields):
+        # Loop through each audit category and get proper search result data and format it
+        for category in grouping_fields: # for each audit category
+            counts = {}
+            # Go through each bucket
+            for bucket in outer_bucket[category]['buckets']:
+                counts = {}
+                # Go through each assay for a key/row and get count and add to counts dictionary
+                # that keeps track of counts for each key/row.
+                for assay in bucket['assay_title']['buckets']:
+                    doc_count = assay['doc_count']
+                    if doc_count > matrix['max_cell_doc_count']:
+                        matrix['max_cell_doc_count'] = doc_count
+                    if 'key' in assay:
+                        counts[assay['key']] = doc_count
+
+                # We now have `counts` containing each displayed key and the corresponding count for a
+                # row of the matrix. Convert that to a list of counts (cell values for a row of the
+                # matrix) to replace the existing bucket for the given grouping_fields term with a
+                # simple list of counts without their keys -- the position within the list corresponds
+                # to the keys within 'x'.
+                summary = []
+                for xbucket in x_buckets:
+                    summary.append(counts.get(xbucket['key'], 0))
+                bucket['assay_title'] = summary
+
+    # For the no audits row.
+    # Convert Elasticsearch returned matrix search data to a form usable by the front end matrix
+    # code, using only the 'matrix' object within the search data. It contains matrix search
+    # results in 'bucket' arrays, with the exact terms being defined in the .py file for the object
+    # we're querying in the object's 'matrix' property.
+    #
+    # matrix (dictionary): 'matrix' object within the Elasticsearch matrix search results,
+    #        containing all the data to render the matrix and its headers, but not the facets that
+    #        appear along the top and bottom.
+    # x_buckets (dictionary): 'x' object within the Elasticsearch matrix search results, containing
+    #        the headers that give titles to each column of the chart, as well as summary counts
+    #        we don't currently use on the front end.
+    # outer_bucket (list): search result bucket containing the term from which to group by.
+    # grouping_fields (list): List of no audit labels in order that is hard coded above. Allows
+    #        for recursion through the nested query.
+    # aggregations (list): same as outer_bucket. Allows for aggregations to be modified so that
+    #        the nested query that allows for each level of no audits can become separate rows
+    #        under the overall no audits row.
+
+    def summarize_no_audits(matrix, x_buckets, outer_bucket, grouping_fields, aggregations):
+        # Loop by recursion through grouping_fields until we get the terminal no audit field. So
+        # get the initial no audit field in the list and save the rest for the recursive call.
+        group_by = grouping_fields[0]
+        grouping_fields = grouping_fields[1:]
+
+        # If there are still items in grouping_fields, then loop by recursion until there is
+        # nothing left in grouping_fields.
+        if grouping_fields:
+            summarize_no_audits(matrix, x_buckets, outer_bucket[group_by], grouping_fields, aggregations)
+
+        counts = {}
+        # We have recursed through to the last grouping_field in the array given in the top-
+        # level summarize_buckets call. Now we can get down to actually converting the search
+        # result data. First loop through each element in the term's 'buckets' which contain
+        # displayable key and a count.
+        for assay in outer_bucket[group_by]['assay_title']['buckets']:
+            # Grab the count for the row, and keep track of the maximum count we find by
+            # mutating the max_cell_doc_count property of the matrix for the front end to use
+            # to color the cells. Then we add to a counts dictionary that keeps track of each
+            # displayed term and the corresponding count.
+            doc_count = assay['doc_count']
+            if doc_count > matrix['max_cell_doc_count']:
+                matrix['max_cell_doc_count'] = doc_count
+            if 'key' in assay:
+                counts[assay['key']] = doc_count
+
+        # We now have `counts` containing each displayed key and the corresponding count for a
+        # row of the matrix. Convert that to a list of counts (cell values for a row of the
+        # matrix) to replace the existing bucket for the given grouping_fields term with a
+        # simple list of counts without their keys -- the position within the list corresponds
+        # to the keys within 'x'.
+        summary = []
+        for xbucket in x_buckets:
+            summary.append(counts.get(xbucket['key'], 0))
+        # Set proper results in aggregations. Instead of keeping the nested structure from the
+        # query, set each no audit category as a separate item. Delete the other information
+        # from the nested queries. *Not really sure if this information is necessary so I just
+        # took it out.*
+        aggregations[group_by] = outer_bucket[group_by]['assay_title']
+        aggregations[group_by]['assay_title'] = summary
+        aggregations[group_by].pop("buckets", None)
+        aggregations[group_by].pop("sum_other_doc_count", None)
+        aggregations[group_by].pop("doc_count_error_upper_bound", None)
+
+
+    summarize_buckets(
+        result['matrix'],
+        aggregations['matrix']['x']['buckets'],
+        aggregations['matrix'],
+        y_groupings)
+
+    summarize_no_audits(
+        result['matrix'],
+        aggregations['matrix']['x']['buckets'],
+        aggregations['matrix'],
+        no_audits_groupings,
+        aggregations['matrix'])
+
+    # There is no generated key for the no audit categories, so we need to manually add them so
+    # that they will be able to be read in the JS file.
+    aggregations['matrix']['no.audit.error']['key'] = 'no errors'
+    aggregations['matrix']['no.audit.not_compliant']['key'] = 'no errors and compliant'
+    aggregations['matrix']['no.audit.warning']['key'] = 'no errors, compliant, and no warnings'
+    if "no.audit.internal_action" in no_audits_groupings:
+        aggregations['matrix']['no.audit.internal_action']['key'] = "no audits"
+
+    # We need to format the no audits entries as subcategories in an overal 'no_audits' row.
+    # To do this, we need to make it the same format as the audit category entries so the JS
+    # file will read them and treat them equally.
+    aggregations['matrix']['no_audits'] = {}
+    aggregations['matrix']['no_audits']['buckets'] = []
+
+    # Add the no audit categories into the overall no_audits entry.
+    for category in aggregations['matrix']:
+        if "no.audit" in category:
+            aggregations['matrix']['no_audits']['buckets'].append(aggregations['matrix'][category])
+
+    # Remove the no audit categories now that they have been added to the overall no_audits row.
+    for audit in no_audits_groupings:
+        aggregations['matrix'].pop(audit)
+
+    result['matrix']['y']['label'] = "Audit Category"
+    result['matrix']['y']['group_by'][0] = "audit_category"
+    result['matrix']['y']['group_by'][1] = "audit_label"
+
+    # Formats all audit categories into readable/usable format for auditmatrix.js
+    bucket_audit_category_list = []
+    for audit in aggregations['matrix']:
+        if "audit" in audit:
+            audit_category_dict = {}
+            audit_category_dict['audit_label'] = aggregations['matrix'][audit]
+            audit_category_dict['key'] = audit
+            bucket_audit_category_list.append(audit_category_dict)
+
+    bucket_audit_category_dict = {}
+    bucket_audit_category_dict['buckets'] = bucket_audit_category_list
+
+    # Add correctly formatted data to results
+    result['matrix']['y']['audit_category'] = bucket_audit_category_dict
     result['matrix']['x'].update(aggregations['matrix']['x'])
 
     # Add batch actions

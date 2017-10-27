@@ -15,28 +15,25 @@
         { "$ref": "mixins.json#/standard_status" },
         { "$ref": "mixins.json#/submitted" },
         { "$ref": "mixins.json#/product_id" },
+        { "$ref": "mixins.json#/url" },
         { "$ref": "mixins.json#/source" },
         { "$ref": "mixins.json#/notes" },
         { "$ref": "mixins.json#/documents" }
     ],
     "properties": {
         "schema_version": {
-            "default": "3"
+            "default": "5"
         },
         "rnai_type": {
             "title": "Class",
             "description": "The classification of the interfering RNA (e.g. shRNA or siRNA).",
             "type": "string",
+            "comment": "Locking down to prevent new rnais from being submitted.",
+            "permission": "import_items",
             "enum": [
                 "shRNA",
                 "siRNA"
             ]
-        },
-        "url": {
-            "title": "URL",
-            "description": "An external resource with additional information about the RNAi construct.",
-            "type": "string",
-            "format": "uri"
         },
         "target": {
             "title": "Target",
@@ -48,21 +45,26 @@
         "vector_backbone_name": {
             "title": "Backbone name",
             "description": "The name of the vector backbone used for the construct.",
-            "type": "string"
+            "type": "string",
+            "pattern": "^(\\S+(\\s|\\S)*\\S+|\\S)$"
         },
         "rnai_sequence": {
             "title": "RNAi sequence",
             "description": "Sequence of the inhibitory RNA.",
-            "type": "string"
+            "type": "string",
+            "pattern": "^[ACUNTG-]+$"
         },
         "rnai_target_sequence": {
             "title": "Target sequence",
             "description": "Genomic sequence targeted by the RNA.",
-            "type": "string"
+            "type": "string",
+            "pattern": "^[ACTG]+|non-mammalian target$"
         }
     },
     "boost_values": {
         "target.label": 1.0,
         "target.aliases": 1.0
-    }
+    },
+    "changelog": "/profiles/changelogs/rnai.md"
+
 }

@@ -1,5 +1,6 @@
 from snovault import upgrade_step
 from pyramid.traversal import find_root
+from datetime import datetime, time
 
 
 @upgrade_step('file', '', '2')
@@ -449,7 +450,115 @@ def file_6_7(value, system):
         value['derived_from'] = list(set(value['derived_from']))
 
     if 'supercedes' in value:
-        value['supercedes'] = list(set(value['supercedes']))
+        value['supercedes'] = list(set(value['supersedes']))
 
     if 'aliases' in value:
         value['aliases'] = list(set(value['aliases']))
+
+
+@upgrade_step('file', '7', '8')
+def file_7_8(value, system):
+    return
+
+
+@upgrade_step('file', '8', '9')
+def file_8_9(value, system):
+
+    # http://redmine.encodedcc.org/issues/4183
+    if (value['file_format'] == 'fastq') and ('assembly' in value):
+        value.pop('assembly')
+
+    # http://redmine.encodedcc.org/issues/1859
+    if 'supercedes' in value:
+        value['supersedes'] = value['supercedes']
+        value.pop('supercedes', None)
+
+
+def set_to_midnight(date_string):
+    release_date = datetime.strptime(date_string, '%Y-%m-%d')
+    min_pub_date_time = datetime.combine(release_date, time.min)
+    return '{:%Y-%m-%dT%H:%M:%S.%f+00:00}'.format(min_pub_date_time)
+
+
+@upgrade_step('file', '9', '10')
+def file_9_10(value, system):
+    # http://redmine.encodedcc.org/issues/5021
+    # http://redmine.encodedcc.org/issues/4929
+    # http://redmine.encodedcc.org/issues/4927
+    # http://redmine.encodedcc.org/issues/4903
+    # http://redmine.encodedcc.org/issues/4904
+
+    date_created = value.get('date_created')
+    if date_created.find('T') == -1:
+        value['date_created'] = set_to_midnight(date_created)
+
+    # http://redmine.encodedcc.org/issues/4748
+    aliases = []
+    if 'aliases' in value and value['aliases']:
+        aliases = value['aliases']
+    else:
+        return
+
+    aliases_to_remove = []
+    for i in range(0, len(aliases)):
+        new_alias = ''
+        if 'roadmap-epigenomics' in aliases[i]:
+            if '||' in aliases[i]:
+                scrub_parts = aliases[i].split('||')
+                date_split = scrub_parts[1].split(' ')
+                date = "-".join([date_split[1].strip(),
+                                date_split[2].strip(),
+                                date_split[5].strip()])
+                scrubbed_list = [scrub_parts[0].strip(), date.strip(), scrub_parts[2].strip()]
+                if len(scrub_parts) == 4:
+                    scrubbed_list.append(scrub_parts[3].strip())
+                new_alias = '_'.join(scrubbed_list)
+        parts = aliases[i].split(':') if not new_alias else new_alias.split(':')
+        namespace = parts[0]
+        if namespace in ['ucsc_encode_db', 'UCSC_encode_db', 'versionof']:
+            # Remove the alias with the bad namespace
+            aliases_to_remove.append(aliases[i])
+            namespace = 'encode'
+        if namespace in ['CGC']:
+            namespace = namespace.lower()
+
+        rest = '_'.join(parts[1:]).strip()
+        # Remove or substitute bad characters and multiple whitespaces
+
+        import re
+        if '"' or '#' or '@' or '!' or '$' or '^' or '&' or '|' or '~'  or ';' or '`' in rest:
+            rest = re.sub(r'[\"#@!$^&|~;`\/\\]', '', rest)
+            rest = ' '.join(rest.split())
+        if '%' in rest:
+            rest = re.sub(r'%', 'pct', rest)
+        if '[' or '{' in rest:
+            rest = re.sub('[\[{]', '(', rest)
+        if ']' or '}' in rest:
+            rest = re.sub('[\]}]', ')', rest)
+
+        new_alias = ':'.join([namespace, rest])
+        if new_alias not in aliases:
+            aliases[i] = new_alias
+
+    if aliases_to_remove and aliases:
+        for a in aliases_to_remove:
+            if a in aliases:
+                aliases.remove(a)
+
+
+@upgrade_step('file', '10', '11')
+def file_10_11(value, system):
+    # http://redmine.encodedcc.org/issues/5049
+    # http://redmine.encodedcc.org/issues/5081
+    # http://redmine.encodedcc.org/issues/4924
+    if not value.get('no_file_available'):
+        value['no_file_available'] = False
+
+    # The above change also required the files whose values should be set to True
+    # to also be upgraded or patched. The patch was applied post-release and 
+    # can be found in ./upgrade_data/file_10_to_11_patch.tsv
+
+@upgrade_step('file', '11', '12')
+def file_11_12(value, system):
+    # https://encodedcc.atlassian.net/browse/ENCD-3347
+    return

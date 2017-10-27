@@ -3,7 +3,7 @@
 // Override bootstrap3 header classes
 dt.h3, dt.h4, dd.h3, dd.h4 {
     margin-top: 0;
-    @include font-size(1);
+    font-size: 1rem;
 }
 
 dd.h3, dd.h4 {
@@ -20,9 +20,9 @@ dl.key-value, dl.key-value-doc {
         padding: 0;
         line-height: 1.3;
         text-align: left;
-        vertical-align: top;
         width: auto;
         word-wrap: break-word;
+        word-break: break-word;
     }
 
     dt {
@@ -33,88 +33,43 @@ dl.key-value, dl.key-value-doc {
         }
     }
 
-    dd {
-        // For things like gene sequences that are multi-line sequences with no spaces
-        &.sequence {
-            overflow-wrap: break-word;
-            word-break: break-all;
-        }
-    }
-
     [data-test] {
         clear: both;
-        margin: 6px 0;
+        margin: 8px 0;
     }
+}
+
+// For displahing nucleotide sequences so that they’ll wrap without needing spaces.
+.sequence {
+    overflow-wrap: break-word;
+    word-break: break-all;
 }
 
 @media screen and (min-width: $screen-xs-min) {
     dl.key-value {
-        display: table;
-
-        dt, dd {
-            display: table-cell;
-        }
+        display: block;
 
         dt {
-            min-width: 140px;
+            flex: 0 0 140px;
             padding: 8px 0;
+
+            .modal-body & {
+                padding: 4px 0;
+            }
         }
 
         dd {
+            flex: 1 1 100%;
             padding: 8px 0 8px 10px;
+
+            .modal-body & {
+                padding: 4px 0 4px 10px;
+            }
         }
 
         [data-test] {
-            clear: none;
-            display: table-row;
-        }
-    }
-}
-
-.key-value-flex {
-    margin: 0;
-
-    dt, dd {
-        display: block;
-        margin: 0;
-    }
-
-    dt {
-        font-weight: bold;
-
-        &:after {
-            content: ": ";
-        }
-    }
-
-    dd {
-        @extend .clearfix;
-    }
-
-    div {
-        clear: both;
-        margin: 6px 0;
-    }
-
-    @media screen and (min-width: $screen-xs-min) {
-        display: table;
-
-        dt, dd {
-            display: table-cell;
-            vertical-align: bottom;
-        }
-
-        dt {
-            padding: 6px 20px 6px 0;
-        }
-
-        dd {
-            padding: 6px 0;
-        }
-
-        div {
-            clear: none;
-            display: table-row;
+            display: flex;
+            margin: 0;
         }
     }
 }
@@ -173,6 +128,22 @@ dd ul, .multi-value {
     }
 }
 
+dd ul, .multi-value-line {
+    display: block;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    li {
+        display: block;
+        margin-right: 5px;
+
+        span {
+            font-weight: normal;
+        }
+    }
+}
+
 .multi-comma {
     margin-right: 0;
 
@@ -211,10 +182,10 @@ dd ul, .multi-value {
     display: inline-block;
     padding: 0;
     margin-right: 5px;
-    @include border-radius(2px);
+    border-radius: 2px;
     border: 1px solid #c0c0c0;
     color: #333;
-    @include font-size(0.9);
+    font-size: 0.9rem;
     text-decoration: none;
 
     &:hover {
@@ -238,3 +209,18 @@ dd ul, .multi-value {
     }
 }
 
+.data-display-array dl {
+    margin-top: 10px;
+
+    &:first-child {
+        margin-top: 0;
+    }
+}
+
+.supplementary-data {
+    border-top: 1px solid #c0c0c0;
+
+    &:first-child {
+        border-top: none;
+    }
+}

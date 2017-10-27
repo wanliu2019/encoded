@@ -1,40 +1,42 @@
-'use strict';
-var React = require('react');
-var globals = require('./globals');
-var dbxref = require('./dbxref');
+import React from 'react';
+import PropTypes from 'prop-types';
+import * as globals from './globals';
+import { DbxrefList } from './dbxref';
 
-var DbxrefList = dbxref.DbxrefList;
-var Dbxref = dbxref.Dbxref;
+const Platform = (props) => {
+    const context = props.context;
+    const itemClass = globals.itemClass(context, 'view-detail key-value');
+    return (
+        <div className="panel">
+            <dl className={itemClass}>
+                <div data-test="name">
+                    <dt>Platform name</dt>
+                    <dd><a href={context.url}>{context.title}</a></dd>
+                </div>
 
-var Panel = module.exports.Panel = React.createClass({
-    render: function() {
-        var context = this.props.context;
-        var itemClass = globals.itemClass(context, 'view-detail key-value');
-        return (
-            <div className="panel">
-                <dl className={itemClass}>
-                    <div data-test="name">
-                        <dt>Platform name</dt>
-                        <dd><a href={context.url}>{context.title}</a></dd>
-                    </div>
+                <div data-test="obiid">
+                    <dt>OBI ID</dt>
+                    <dd>{context.term_id}</dd>
+                </div>
 
-                    <div data-test="obiid">
-                        <dt>OBI ID</dt>
-                        <dd><Dbxref value={context.term_id} /></dd>
-                    </div>
+                <div data-test="externalresources">
+                    <dt>External resources</dt>
+                    <dd>
+                        {context.dbxrefs.length ?
+                            <DbxrefList context={context} dbxrefs={context.dbxrefs} />
+                        : <em>None submitted</em> }
+                    </dd>
+                </div>
+            </dl>
+        </div>
+    );
+};
 
-                    <div data-test="externalresources">
-                        <dt>External resources</dt>
-                        <dd>
-                            {context.dbxrefs.length ?
-                                <DbxrefList values={context.dbxrefs} />
-                            : <em>None submitted</em> }
-                        </dd>
-                    </div>
-                </dl>
-            </div>
-        );
-    }
-});
+Platform.propTypes = {
+    context: PropTypes.object.isRequired,
+};
 
-globals.panel_views.register(Panel, 'Platform');
+globals.panelViews.register(Platform, 'Platform');
+
+// Need to export this for Jest tests.
+export default Platform;

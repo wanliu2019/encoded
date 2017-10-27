@@ -12,134 +12,7 @@ $characterization-figure-width: 64px;
 $characterization-figure-height: 64px;
 $qualitymetric-figure-width: 96px;
 $qualitymetric-figure-height: 96px;
-
-
-
-/* clear first in row in ie 8 or lower */
-.multi-columns-row {
-    .first-in-row {
-        clear: left;
-    }
-}
-
-
-/* clear the first in row for any block that has the class "multi-columns-row" */
-@media (min-width: $screen-sm-min) {
-    .multi-columns-row {
-        .col-lg-1:nth-child(12n+1),
-        .col-lg-2:nth-child(6n+1),
-        .col-lg-3:nth-child(4n+1),
-        .col-lg-4:nth-child(3n+1),
-        .col-lg-6:nth-child(2n+1),
-        .col-md-1:nth-child(12n+1),
-        .col-md-2:nth-child(6n+1),
-        .col-md-3:nth-child(4n+1),
-        .col-md-4:nth-child(3n+1),
-        .col-md-6:nth-child(2n+1){
-            clear: none;
-        }
-        .col-sm-1:nth-child(12n+1),
-        .col-sm-2:nth-child(6n+1),
-        .col-sm-3:nth-child(4n+1),
-        .col-sm-4:nth-child(3n+1),
-        .col-sm-6:nth-child(2n+1){
-            clear: left;
-        }
-    }
-}
-@media (min-width: $screen-md-min) {
-    .multi-columns-row {
-        .col-lg-1:nth-child(12n+1),
-        .col-lg-2:nth-child(6n+1),
-        .col-lg-3:nth-child(4n+1),
-        .col-lg-4:nth-child(3n+1),
-        .col-lg-6:nth-child(2n+1),
-        .col-sm-1:nth-child(12n+1),
-        .col-sm-2:nth-child(6n+1),
-        .col-sm-3:nth-child(4n+1),
-        .col-sm-4:nth-child(3n+1),
-        .col-sm-6:nth-child(2n+1){
-            clear: none;
-        }
-        .col-md-1:nth-child(12n+1),
-        .col-md-2:nth-child(6n+1),
-        .col-md-3:nth-child(4n+1),
-        .col-md-4:nth-child(3n+1),
-        .col-md-6:nth-child(2n+1){
-            clear: left;
-        }
-    }
-}
-@media (min-width: $screen-lg-min) {
-    .multi-columns-row {
-        .col-md-1:nth-child(12n+1),
-        .col-md-2:nth-child(6n+1),
-        .col-md-3:nth-child(4n+1),
-        .col-md-4:nth-child(3n+1),
-        .col-md-6:nth-child(2n+1),
-        .col-sm-1:nth-child(12n+1),
-        .col-sm-2:nth-child(6n+1),
-        .col-sm-3:nth-child(4n+1),
-        .col-sm-4:nth-child(3n+1),
-        .col-sm-6:nth-child(2n+1){
-            clear: none;
-        }
-        .col-lg-1:nth-child(12n+1),
-        .col-lg-2:nth-child(6n+1),
-        .col-lg-3:nth-child(4n+1),
-        .col-lg-4:nth-child(3n+1),
-        .col-lg-6:nth-child(2n+1){
-            clear: left;
-        }
-    }
-}
-
-
-.type-Document.view-detail {
-    padding: 0;
-
-    figure {
-        margin: 14px;
-        padding: 10px;
-        text-align: center;
-    }
-
-    figcaption {
-        font-weight: bold;
-        text-align: center;
-        padding: 5px;
-    }
-}
-
-
-.type-Characterization.view-detail {
-    @extend .type-Document.view-detail;
-
-    header {
-        margin: 0 15px;
-
-        h3 {
-            margin-bottom: 0;
-        }
-    }
-}
-
-
-.type-QualityMetric.view-detail {
-    padding: 0;
-
-    figure {
-        margin: 14px;
-        padding: 10px;
-        text-align: center;
-    }
-
-    figcaption {
-        font-weight: bold;
-        text-align: center;
-        padding: 5px;
-    }
-}
+$attachment-button-margin: 3px;
 
 
 .document-title {
@@ -149,13 +22,7 @@ $qualitymetric-figure-height: 96px;
     border-bottom: 1px solid #c0c0c0;
     font-weight: bold;
     text-align: left;
-    @include font-size(1);
-}
-
-
-.characterization-title {
-    @extend .document-title;
-    padding: 10px;
+    font-size: 1rem;
 }
 
 
@@ -174,8 +41,7 @@ $qualitymetric-figure-height: 96px;
     @include status-colors($state-success-bg, $state-success-text);
 }
 
-.type-Characterization.view-detail.status-not-compliant,
-.type-Document.view-detail.status-deleted {
+.type-Characterization.view-detail.status-not-compliant {
     @include status-colors($state-danger-bg, $state-danger-text);
 }
 
@@ -185,8 +51,7 @@ $qualitymetric-figure-height: 96px;
 
 .type-Characterization.view-detail.status-in-progress,
 .type-Characterization.view-detail.status-not-submitted-for-review-by-lab,
-.type-Characterization.view-detail.status-not-reviewed,
-.type-Document.view-detail.status-none {
+.type-Characterization.view-detail.status-not-reviewed {
     @include status-colors($bg: #f7f7f9, $text: #333);
 }
 
@@ -200,7 +65,7 @@ $qualitymetric-figure-height: 96px;
         padding: 5px 20px 8px;
         background-color: desaturate(lighten(#0a253d,30%),30%);
         color: #fff;
-        @include font-size(0.8);
+        font-size: 0.8rem;
         font-weight: bold;
     }
 
@@ -225,7 +90,11 @@ $qualitymetric-figure-height: 96px;
 
     .label {
         display: inline-block;
-        @include font-size(0.8);
+        font-size: 0.8rem;
+    }
+
+    @media screen and (min-width: $screen-sm-min) {
+        flex: 1 1 auto;
     }
 }
 
@@ -237,7 +106,7 @@ $qualitymetric-figure-height: 96px;
 .characterization-status {
     margin-bottom: 8px;
     font-weight: bold;
-    @include font-size(1.5);
+    font-size: 1.5rem;
 
     %status-pos {
         top: -5px;
@@ -281,20 +150,18 @@ $qualitymetric-figure-height: 96px;
     }
 }
 
-
 .label {
     display: table-cell;
     position: relative;
-    text-shadow: 0 -1px 0 rgba(0,0,0,.3);
     text-align: left;
     padding: .3em .5em .4em;
-    @include font-size(1);
+    font-size: 1rem;
     line-height: 1.1;
     background-color: $gray-light;
 
     @media screen and (min-width: $screen-sm-min) {
         display: inline-block;
-        @include font-size(1.1);
+        font-size: 1.1rem;
     }
 }
 
@@ -311,7 +178,7 @@ $qualitymetric-figure-height: 96px;
 
     li {
         display: table-cell;
-        @include border-radius(0);
+        border-radius: 0;
         vertical-align: bottom;
         border-left: 1px solid #606060;
 
@@ -320,43 +187,43 @@ $qualitymetric-figure-height: 96px;
         }
 
         &:first-child {
-            @include border-top-left-radius(4px);
-            @include border-bottom-left-radius(4px);
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: 4px;
             border-left: none;
         }
 
         &:last-child {
-            @include border-top-right-radius(4px);
-            @include border-bottom-right-radius(4px);
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
         }
     }
 }
 
 .status-list-title {
     display: block;
-    @include font-size(0.7);
+    font-size: 0.7rem;
     font-weight: normal;
     text-align: left;
 
     @media screen and (min-width: $screen-sm-min) {
         display: inline;
-        @include font-size(1.2);
+        font-size: 1.2rem;
     }
 }
 
 @each $item in label, badge {
     // ELIGIBLE FOR NEW DATA (green)
-    .#{$item}.status-eligible-for-new-data        { background-color: $brand-success; }
-    .#{$item}.status-eligible-for-new-data[href]   { background-color: darken($brand-success, 10%); }
+    .#{$item}.status-characterized-to-standards        { background-color: $brand-success; }
+    .#{$item}.status-characterized-to-standards[href]   { background-color: darken($brand-success, 10%); }
     // PENDING DCC REVIEW (blue)
     .#{$item}.status-pending-dcc-review      { background-color: $brand-info; }
     .#{$item}.status-pending-dcc-review[href] { background-color: darken($brand-info, 10%); }
     // NOT ELIGIBLE FOR NEW DATA (red)
-    .#{$item}.status-not-eligible-for-new-data          { background-color: $brand-danger; }
-    .#{$item}.status-not-eligible-for-new-data[href]    { background-color: darken($brand-danger, 10%); }
+    .#{$item}.status-not-characterized-to-standards          { background-color: $brand-danger; }
+    .#{$item}.status-not-characterized-to-standards[href]    { background-color: darken($brand-danger, 10%); }
     // AWAITING LAB CHARACTERIZATION (yellow)
-    .#{$item}.status-awaiting-lab-characterization      { background-color: $brand-warning; }
-    .#{$item}.status-awaiting-lab-characterization[href]{ background-color: darken($brand-warning, 10%); }
+    .#{$item}.status-awaiting-characterization      { background-color: $brand-warning; }
+    .#{$item}.status-awaiting-characterization[href]{ background-color: darken($brand-warning, 10%); }
     // COMPLIANT (green)
     .#{$item}.status-compliant          { background-color: $brand-success; }
     .#{$item}.status-compliant[href]    { background-color: darken($brand-success, 10%); }
@@ -418,7 +285,7 @@ $qualitymetric-figure-height: 96px;
     .#{$item}.status-audit-default        { background-color: $brand-success; }
     .#{$item}.status-audit-default[href]   { background-color: darken($brand-success, 10%); }
 
-    // DCC_ACTION, other (gray)
+    // INTERNAL_ACTION, other (gray)
     .#{$item}.status-audit-dcc_action        { background-color: #999; }
     .#{$item}.status-audit-dcc_action[href]   { background-color: darken(#999, 10%); }
 
@@ -434,23 +301,33 @@ $qualitymetric-figure-height: 96px;
     .#{$item}.status-audit-error        { background-color: $brand-danger; }
     .#{$item}.status-audit-error[href]   { background-color: darken($brand-danger, 10%); }
 
+    // Internal status badges
+    .#{$item}.status-unreviewed            { background-color: #a0a0a0; color: #fff; }
+    .#{$item}.status-no-available-pipeline { background-color: #a0a0a0; color: #fff; }    
+    .#{$item}.status-unrunnable            { background-color: #cc0700; color: #fff; }    
+    .#{$item}.status-pipeline-ready        { background-color: #a0a0a0; color: #fff; }    
+    .#{$item}.status-processing            { background-color: #a0a0a0; color: #fff; }    
+    .#{$item}.status-pipeline-completed    { background-color: #a0a0a0; color: #fff; }    
+    .#{$item}.status-requires-lab-review   { background-color: #cc0700; color: #fff; }    
+    .#{$item}.status-release-ready         { background-color: #4C994C; color: #fff; }    
+    .#{$item}.status-pipeline-error        { background-color: #cc0700; color: #fff; }    
+
     /* (gray) is the default if no class given */
 }
 
 // Status indicator glyph colors
-.indicator.status-eligible-for-new-data { color: $indicator-eligible; }
-.indicator.status-eligible-for-new-data-via-exemption { color: $indicator-eligible-exempt; }
-.indicator.status-pending-dcc-review { color: $indicator-pending; }
-.indicator.status-not-eligible-for-new-data { color: $indicator-noteligible; }
-.indicator.status-awaiting-lab-characterization { color: $indicator-awaiting; }
-.indicator.status-not-pursued { color: $indicator-notpursued; }
-.indicator.status-not-reviewed { color: $indicator-notreviewed; }
+.indicator.status-characterized-to-standards { color: #00e500; }
+.indicator.status-characterized-to-standards-with-exemption { color: #fff712; }
+.indicator.status-partially-characterized { color: #ffc300; }
+.indicator.status-awaiting-characterization { color: #e58200; }
+.indicator.status-not-characterized-to-standards { color: #e50400; }
+.indicator.status-not-pursued { color: #d0d0d0; }
 
 %file-icon {
     @include img-responsive();
     @include text-hide;
-    width: 80%;
-    height: 80%;
+    width: 100%;
+    height: 100%;
     background-position: center center;
     background-repeat: no-repeat;
     background-size: 80% 80%;
@@ -459,28 +336,16 @@ $qualitymetric-figure-height: 96px;
 .file-pdf {
     @extend %file-icon;
     background-image: url(/static/img/file-pdf.svg);
-
-    .no-svg & {
-        background-image: url(/static/img/file-pdf.png);
-    }
 }
 
 .file-generic {
     @extend %file-icon;
     background-image: url(/static/img/file.svg);
-
-    .no-svg & {
-        background-image: url(/static/img/file.png);
-    }
 }
 
 .file-missing {
     @extend %file-icon;
     background-image: url(/static/img/file-broken.svg);
-
-    .no-svg & {
-        background-image: url(/static/img/file-broken.png);
-    }
 }
 
 .status-indicators {
@@ -489,17 +354,20 @@ $qualitymetric-figure-height: 96px;
 
 .facet-term-key {
     margin-right: 5px;
-    @include font-size(1.1);
+    font-size: 1.1rem;
 }
 
 
 @mixin type-panel($figure-width, $figure-height) {
-    $attachment-button-margin: 3px;
 
     margin-top: 0;
 
     &.view-detail {
         padding: 0;
+
+        @media screen and (min-width: $screen-sm-min) {
+            display: flex;
+        }
 
         figure {
             position: relative;
@@ -554,8 +422,7 @@ $qualitymetric-figure-height: 96px;
             }
 
             @media screen and (min-width: $screen-sm-min) {
-                width: $figure-width;
-                float: right;
+                flex: 0 0 $figure-width;
                 margin: 0 0 0 5px;
             }
 
@@ -569,8 +436,32 @@ $qualitymetric-figure-height: 96px;
 
 
 .attachment {
-    display: table-cell;
-    vertical-align: middle;
+    padding: $attachment-button-margin;
+
+    @at-root #{&}__button {
+        display: block;
+        position: relative;
+        padding: $attachment-button-margin;
+        height: $document-figure-height - (2 * $attachment-button-margin);
+        width: $document-figure-width - (2 * $attachment-button-margin);
+        border-radius: 5px;
+        border: 1px solid #a0a0a0;
+        overflow: hidden;
+    }
+
+    @at-root #{&}__hover {
+        position : absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background-color: transparent;
+        z-index: 1;
+
+        &:hover {
+            background-color:rgba(0,0,0,0.2);
+        }
+    }
 }
 
 
@@ -585,7 +476,7 @@ $qualitymetric-figure-height: 96px;
             width: 100%;
             padding: 0 17px 0 10px;
             text-align: center;
-            @include font-size(0.85);
+            font-size: 0.85rem;
             line-height: 24px;
         }
     }
@@ -596,68 +487,100 @@ $qualitymetric-figure-height: 96px;
     word-break: break-all;
 }
 
-.type-Document {
-    @include type-panel($document-figure-width, $document-figure-height);
+// Document styles, normally added to a <Panel> component's classes.
+$detail-switch-height: 30px;
+$detail-switch-width: 30px;
+.document {
+    margin: 3px;
 
-    .panel-body {
-        padding: 0;
+    // Document header; normally a document type and/or label
+    @at-root #{&}__header {
+        padding: 5px;
+        border-bottom: 1px solid #c0c0c0;
+        font-weight: bold;
+        text-transform: capitalize;
+    }
+
+    @at-root #{&}__intro {
+        display: flex;
+        border-bottom: 1px solid #c0c0c0;
+
+        @at-root #{&}--attachment-only {
+            border-bottom: none;
+        }
+    }
+
+    @at-root #{&}__caption {
+        flex: 1 1 auto;
+        margin: 5px;
+    }
+
+    @at-root #{&}__preview {
+        flex: 0 0 $document-figure-width;
+        align-items: stretch;
+        margin: 0;
+        border-left: 1px solid #c0c0c0;
+    }
+
+    @at-root #{&}__file {
+        display: flex;
+
+        @at-root #{&}-name {
+            flex: 1 1 auto;
+            overflow: hidden;
+            white-space: nowrap;
+
+            @at-root #{&}-icon {
+                display: inline-block;
+                padding: 0 5px;
+                line-height: $detail-switch-height - 1;
+            }
+
+            @at-root #{&}-link {
+                display: inline;
+                line-height: $detail-switch-height;
+            }
+        }
+
+        @at-root #{&}-detail-switch {
+            flex: 0 0 $detail-switch-width;
+            padding: 5px;
+            height: $detail-switch-height;
+            line-height: $detail-switch-height;
+            max-width: $detail-switch-width;
+            background-color: #e8e8e8;
+            border: none;
+
+            &:hover {
+                background-color: #b8c7d5;
+            }
+        }
+    }
+
+    @at-root #{&}__detail {
+        display: none;
+        margin: 0;
+        padding: 10px 5px;
+        border-top: 1px solid #c0c0c0;
+
+        &.active {
+            display: block;
+        }
     }
 }
 
-.type-Characterization {
-    @include type-panel($document-figure-width, $document-figure-height);
-
-    .panel-body {
-        padding: 0;
-    }
-}
-
-.type-Characterization.type-AntibodyCharacterization {
-    @include type-panel($characterization-figure-width, $characterization-figure-height);
-}
-
-.type-QualityMetric {
-    @include type-panel($qualitymetric-figure-width, $qualitymetric-figure-width);
-}
-
-@mixin panel-header($figure-height) {
-    height: auto;
-    border-bottom: 1px solid #e8e8e8;
-    overflow: hidden;
-
-    @media screen and (min-width: $screen-sm-min) {
-        height: $figure-height;
-    }
-}
-
-.document-header {
-    @include panel-header($document-figure-height);
-}
-
-.characterization-header {
-    @include panel-header($characterization-figure-height);
-
-    &.panel-body {
-        padding: 0;
-    }
-}
-
-.quality-metric-header {
-    height: auto;
-    overflow: hidden;
-}
 
 %panel-intro {
     padding: 5px;
 
     h3 {
         margin: 0;
-        @include font-size(1.2);
+        font-size: 1.2rem;
     }
 
     p {
         margin: 2px 0 0 0;
-        @include font-size(1);
+        font-size: 1rem;
         word-wrap: break-word;
     }
 }
@@ -674,37 +597,24 @@ $qualitymetric-figure-height: 96px;
 
 // ***************************************
 // Document download file bar classes
-$dl-bar-height: 30px;
 
 // THe file bar itself
 .dl-bar {
     position: relative;
-    height: $dl-bar-height;
+    height: $detail-switch-height;
     padding: 0 10px 0 10px;
-    line-height: $dl-bar-height;
+    line-height: $detail-switch-height;
     border-bottom: 1px solid #e8e8e8;
     white-space: nowrap;
     overflow: hidden;
-}
-
-// Box containing the switch to drop down the details panel
-.detail-switch {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    right: 0;
-    width: $dl-bar-height;
-    height: $dl-bar-height;
-    background-color: #e8e8e8;
-    border-left: 1px solid #e0e0e0;
 }
 
 // Icon within .detail-switch to show the current state of the switch
 .detail-trigger {
     @extend .icon-caret-down;
     display: block;
-    height: $dl-bar-height;
-    line-height: $dl-bar-height;
+    height: $detail-switch-height;
+    line-height: $detail-switch-height;
     font-size: 1.4rem;
     cursor: pointer;
     text-align: center;
@@ -732,7 +642,7 @@ $dl-bar-height: 30px;
     margin: 0;
     background-color: $mainThemeColor;
     text-align: center;
-    @include background-image(linear-gradient(top, lighten($mainThemeColor,5%) 0%, $mainThemeColor 100%));
+    background-image: linear-gradient(top, lighten($mainThemeColor,5%) 0%, $mainThemeColor 100%);
     background-image: -ms-linear-gradient(top, lighten($mainThemeColor,5%) 0%, $mainThemeColor 100%);
     border-top: 1px solid #808080 !important;
     border-bottom: none;
@@ -743,13 +653,12 @@ $dl-bar-height: 30px;
     color: #333333;
 
     &:hover {
-        @include background-image(linear-gradient(top, $mainThemeColor 0%, darken($mainThemeColor,5%) 100%));
-        background-image: -ms-linear-gradient(top, $mainThemeColor 0%, darken($mainThemeColor,5%) 100%);
+        background-image: linear-gradient(top, $mainThemeColor 0%, darken($mainThemeColor,5%) 100%);
     }
 
     &:focus {
         outline: none;
-        @include box-shadow(0 0 3px 2px #94bfe7 inset);
+        box-shadow: 0 0 3px 2px #94bfe7 inset;
     }
 
     &.panel-footer {
@@ -794,7 +703,7 @@ $dl-bar-height: 30px;
     left: 0;
     width: 100%;
     height: 40px;
-    @include background-image(linear-gradient(top,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.3) 100%));
+    background-image: linear-gradient(top,  rgba(0,0,0,0) 0%,rgba(0,0,0,0.3) 100%);
 
     &.active {
         display: none;
@@ -806,5 +715,47 @@ $dl-bar-height: 30px;
 }
 
 .journal, .author {
-    @include font-size(1);
+   font-size: 1rem;
+}
+
+// Characterization panel biosample terms
+// **********
+
+// area to hold biosample terms
+.document__characterization-reviews {
+    display: flex;
+    margin-right: -1px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-content: flex-start;
+    align-items: flex-start;
+    border-bottom: 1px solid #c0c0c0;
+}
+
+// each biosample term
+.document__characterization-biosample-term {
+    flex: 1 1 auto;
+    align-self: auto;
+    padding: 2px 5px;
+    margin-right: 1px;
+    text-align: center;
+    background-color: #e8e8e8;
+    font-size: 0.9rem;
+}
+
+.document__characterization-badge {
+    flex: 1 1 auto;
+    padding: 0 3px;
+
+    .status-list {
+        .label {
+            display: inline-block;
+            margin: 3px 0;
+            padding: 0 17px 0 10px;
+            text-align: center;
+            font-size: 0.85rem;
+            line-height: 24px;
+        }
+    }
 }

@@ -1,52 +1,73 @@
-'use strict';
-var React = require('react');
-var fetched = require('../fetched');
-var globals = require('../globals');
-var noarg_memoize = require('../../libs/noarg-memoize');
-var ObjectPicker = require('../inputs').ObjectPicker;
+import React from 'react';
+import PropTypes from 'prop-types';
+import { FetchedData, Param } from '../fetched';
+import * as globals from '../globals';
+import { ObjectPicker } from '../inputs';
 
 
-var ItemBlockView = module.exports.ItemBlockView = React.createClass({
-    render: function() {
-        var ViewComponent = globals.content_views.lookup(this.props.context);
-        return <ViewComponent {...this.props} />;
+const ItemBlockView = (props) => {
+    const ViewComponent = globals.contentViews.lookup(props.context);
+    return <ViewComponent {...props} />;
+};
+
+ItemBlockView.propTypes = {
+    context: PropTypes.object,
+};
+
+ItemBlockView.defaultProps = {
+    context: null,
+};
+
+export default ItemBlockView;
+
+
+class FetchedItemBlockView extends React.Component {
+    shouldComponentUpdate(nextProps) {
+        return (nextProps.value.item !== this.props.value.item);
     }
-});
 
-
-var FetchedItemBlockView = React.createClass({
-
-    shouldComponentUpdate: function(nextProps) {
-        return (nextProps.value.item != this.props.value.item);
-    },
-
-    render: function() {
-        var context = this.props.value.item;
+    render() {
+        const context = this.props.value.item;
         if (typeof context === 'object') {
             return <ItemBlockView context={context} />;
         }
         if (typeof context === 'string') {
             return (
-                <fetched.FetchedData>
-                    <fetched.Param name="context" url={context} />
+                <FetchedData>
+                    <Param name="context" url={context} />
                     <ItemBlockView />
-                </fetched.FetchedData>
+                </FetchedData>
             );
         }
         return null;
     }
-});
+}
+
+FetchedItemBlockView.propTypes = {
+    value: PropTypes.object,
+};
+
+FetchedItemBlockView.defaultProps = {
+    value: null,
+};
 
 
 globals.blocks.register({
     label: 'item block',
     icon: 'icon icon-paperclip',
-    schema: noarg_memoize(function() {
-        var ReactForms = require('react-forms');
-        return ReactForms.schema.Mapping({}, {
-            item: ReactForms.schema.Scalar({label: 'Item', input: <ObjectPicker />}),
-            className: ReactForms.schema.Scalar({label: 'CSS Class'}),
-        });
-    }),
-    view: FetchedItemBlockView
+    schema: {
+        type: 'object',
+        properties: {
+            item: {
+                title: 'Item',
+                type: 'string',
+                formInput: <ObjectPicker />,
+            },
+            className: {
+                title: 'CSS Class',
+                type: 'string',
+            },
+        },
+    },
+    view: FetchedItemBlockView,
 }, 'itemblock');

@@ -1,4 +1,5 @@
 {
+    "title": "Analysis step run",
     "description": "Schema for reporting the specific calculation of an analysis_step",
     "id": "/profiles/analysis_step_run.json",
     "$schema": "http://json-schema.org/draft-04/schema#",
@@ -15,7 +16,7 @@
     ],
     "properties": {
         "schema_version": {
-            "default": "2"
+            "default": "4"
         },
         "analysis_step_version": {
             "title": "Analysis Step Version",
@@ -68,10 +69,10 @@
                         "type": "string",
                         "default": "waiting",
                         "enum" : [
-                            "waiting",
-                            "running",
+                            "error",
                             "finished",
-                            "error"
+                            "running",
+                            "waiting"
                         ]
                     }
                 }
@@ -80,14 +81,14 @@
         "status": {
             "title": "Status",
             "type": "string",
-            "default": "waiting",
             "enum" : [
-                "waiting",
-                "running",
-                "finished",
-                "error",
-                "virtual"
+                "in progress",
+                "released",
+                "virtual",
+                "deleted"
             ]
         }
-    }
+    },
+    "changelog": "/profiles/changelogs/analysis_step_run.md"
+
 }

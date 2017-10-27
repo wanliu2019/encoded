@@ -1,7 +1,32 @@
 $pipeline-node-types:
     (file, #FFF5BA),
     (analysis-step, #D3E9FF),
-    (quality-metric, #f0e0f8);
+    (quality-metric, #80ffc0),
+    (file-type, #e0e0e0);
+
+$file-statuses:
+    ("uploading", #5880e0),
+    ("content-error", #ee4444),
+    ("upload-failed", #ee4444),
+    ("in-progress", $brand-info),
+    ("deleted", $brand-warning),
+    ("released", $brand-success),
+    ("replaced", #909090),
+    ("revoked", $brand-danger),
+    ("archived", #c0c0c0),
+    ("status-unknown", #ffc0c0);
+    
+
+// FUnction to return black for light background colors passed in $color, and white for dark
+// backbground colors passed in $color.
+@function node-text-color($color) {
+    @if (lightness($color) > 65) {
+        @return #000000; // Lighter backgorund, return dark color
+    } @else {
+        @return #ffffff; // Darker background, return light color
+    }
+}
+      
 
 @each $node-type, $color in $pipeline-node-types {
     // Audit icons
@@ -11,26 +36,59 @@ $pipeline-node-types:
         &.active {
             fill: desaturate(darken($color, 20%), 30%);
 
-            rect, ellipse {
+            > rect, > ellipse {
                 stroke: #606060;
                 stroke-width: 3px;
             }
+
             line {
                 stroke: #606060;
                 stroke-width: 1px;
             }
         }
 
-        &.error {
+        &.error, &.restricted {
             fill: #ffc0c0;
+        }
+
+        &.revoked, &.deleted {
+            fill: #B24342;
+
+            g.label {
+                fill: #fff;
+            }
+        }
+
+        &.archived, &.replaced {
+            fill: #c0c0c0;
         }
 
         &:hover {
             cursor: pointer;
         }
 
-        text {
+        > text {
             fill: #000;
+        }
+    }
+
+    .graph-modal-#{$node-type} {
+        background-color: $color;
+    }
+}
+
+g.pipeline-node-file-type {
+    pointer-events: none;
+}
+
+g.pipeline-node-file {
+    @each $status, $color in $file-statuses {
+        &.#{$status} {
+            fill: $color;
+
+            g.label {
+                fill: node-text-color($color);
+            }
         }
     }
 }
@@ -43,13 +101,18 @@ g.label {
 }
 
 g.node {
-    rect, ellipse {
+    > rect, > ellipse {
         stroke: #a0a0a0;
         stroke-width: 1.5px;
     }
 
     &.contributing {
-        stroke-dasharray: 4,2; 
+        stroke-dasharray: 4,2;
+
+        rect, ellipse {
+            stroke: #a0a0a0;
+            stroke-width: 1.5px;
+        }
     }
 
     line {
@@ -61,7 +124,6 @@ g.node {
 g.subnodes {
     text {
         font-size: 10px;
-        font-weight: bold;
         pointer-events: none;
     }
 }
@@ -131,31 +193,44 @@ g.edgePath {
 }
 
 g.pipeline-node-qc-metric {
-    circle {
+    > circle {
         stroke-width: 2px;
         stroke: #a0a0a0;
         fill: #80ffc0;
     }
 
-    text {
+    > text {
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
         font-weight: bold;
         fill: #000;
     }
 
     &.active {
-        circle {
+        > circle {
             stroke: #404040;
             fill: darken(#80ffc0, 50%);
         }
 
-        text {
+        > text {
             fill: #fff;
+        }
+    }
+
+    // Handle hovering over the QC circle to bring up the tooltip.
+    > circle:hover {
+        + text + g {
+            display: block;
         }
     }
 }
 
-.quality-metrics-header {
+.file-qc-buttons {
+    .btn {
+        margin-right: 5px;
+    }
+}
+
+.details-view-header {
     margin-bottom: 10px;
     border-bottom: 1px solid #e0e0e0;
 
@@ -165,38 +240,28 @@ g.pipeline-node-qc-metric {
     }
 }
 
-.quality-metrics-info {
+.details-view-info {
     @media screen and (min-width: $screen-md-min) {
         display: table-cell;
         width: 60%;
     }
 
-    h4 {
-        margin-bottom: 5px;
-    }
-
     h5 {
-        margin-top: 0;
+        margin-top: 5px;
+        margin-bottom: 0;
         font-size: 1rem;
         font-weight: normal;
         color: #808080;
     }
 }
 
-.quality-metrics-type {
-    color: #a0a0a0;
-    font-size: 0.9rem;
+.quality-metrics-attachments {
+    margin-top: 20px;
 
     @media screen and (min-width: $screen-md-min) {
-        display: table-cell;
-        width: 40%;
-        padding-bottom: 10px;
-        text-align: right;
-        vertical-align: bottom;
+        margin-top: 0;
     }
-}
 
-.quality-metrics-attachments {
     h5 {
         margin-top: 0;
     }
@@ -241,4 +306,81 @@ g.pipeline-node-qc-metric {
     font-size: 1.5rem;
     font-weight: bold;
     vertical-align: middle;
+}
+
+.graph-modal-audits {
+    margin-top: 4px;
+
+    h5 {
+        margin-top: 0;
+    }
+}
+
+g.qc-tooltip {
+    display: none;
+    pointer-events: none;
+
+    rect, polygon {
+        fill: #000;
+    }
+
+    text {
+        fill: #fff;
+        font-size: 0.8rem;
+        font-weight: normal;
+    }
+}
+
+.file-status-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+// File status legend styles.
+.file-status-legend__item {
+    flex: 1 1 auto;
+    padding: 5px 10px;
+    margin-right: 1px;
+    margin-bottom: 1px;
+    text-align: center;
+    background-color: #f0f0f0;
+
+    @each $status, $color in $file-statuses {
+        &.file-status-legend__item--status-#{$status} {
+            & .file-status-legend__icon {
+                margin-right: 5px;
+                color: $color;
+            }
+        }
+    }        
+}
+
+
+@each $status, $color in $file-statuses {
+    .label.file-status-#{$status} {
+        background-color: $color;
+        color: node-text-color($color);
+    }
+}
+
+
+.status-indicator {
+    display: flex;
+    line-height: 1;
+
+    @each $status, $color in $file-statuses {
+        &.status-indicator--status-#{$status} {
+            & .status-indicator__icon {
+                flex: 0 1 auto;
+                margin-right: 3px;
+                color: $color;
+            }
+        }
+    }
+
+    .status-indicator__label {
+        flex: 0 1 auto;
+        white-space: nowrap;
+    }
 }

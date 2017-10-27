@@ -26,25 +26,25 @@
         { "$ref": "mixins.json#/submitted" },
         { "$ref": "mixins.json#/product_id" },
         { "$ref": "mixins.json#/source" },
+        { "$ref": "mixins.json#/url" },
         { "$ref": "mixins.json#/notes" },
         { "$ref": "mixins.json#/documents" }
     ],
     "properties": {
         "schema_version": {
-            "default": "2"
+            "default": "3"
         },
         "name": {
             "title": "Construct name",
             "description": "The name of the TALEN construct.",
             "type": "string",
-            "default": "",
+            "pattern": "^(\\S+(\\s|\\S)*\\S+|\\S)$|^$",
             "uniqueKey": true
         },
         "description": {
             "title": "Description",
             "description": "A plain text description of the TALEN construct.",
             "type": "string",
-            "default": "",
             "elasticsearch_mapping_index_type": {
                 "title": "Field mapping index type",
                 "description": "Defines one of three types of indexing available",
@@ -52,26 +52,24 @@
                 "default": "analyzed",
                 "enum": [
                     "analyzed",
-                    "not_analyzed",
-                    "no"
+                    "no",
+                    "not_analyzed"
                 ]
-            }
-        },
-        "url": {
-            "title": "URL",
-            "description": "An external resource with additional information about the construct.",
-            "type": "string",
-            "format": "uri"
+            },
+            "pattern": "^(\\S+(\\s|\\S)*\\S+|\\S)$|^$"
         },
         "vector_backbone_name": {
             "title": "Backbone name",
             "description": "The cloning vector used to make the construct. E.g. PEGFP (delGFP-TAL2-truncNLS)",
-            "type": "string"
+            "type": "string",
+            "pattern": "^(\\S+(\\s|\\S)*\\S+|\\S)$"
         },
         "RVD_sequence": {
             "title": "RVD sequence",
             "description": "The repeat variable diresidue sequence. E.g. NI,NG,NI,HD,NG,NN,NG,NG,NN,HD,NI,NI,NI,NI,NM,HD,HD,NG",
+            "comment": "The permissions are switched to DCC only, to prevent submission of these objects. We are in a process of migrating these objects to genetic modification.",
             "type": "string",
+            "permission": "import_items",
             "pattern": "^([ARNDCQEGHILKMFPSTWYV]{2})($|(,\\1))*"
         },
         "target_sequence": {
@@ -83,7 +81,8 @@
         "talen_platform": {
             "title": "TALEN platform",
             "description": "The TALEN platform used to make the construct. E.g. Golden Gate",
-            "type": "string"
+            "type": "string",
+            "pattern": "^(\\S+(\\s|\\S)*\\S+|\\S)$"
         },
         "target_genomic_coordinates": {
             "title": "Target genomic coordinates",
@@ -137,9 +136,9 @@
                         "description": "The type of genomic modification for this pair.  E.g. insertion, deletion, edit",
                         "type": "string",
                         "enum": [
-                            "insertion",
                             "deletion",
-                            "edit"
+                            "edit",
+                            "insertion"
                         ]
                     },
                     "edited_genomic_coordinates": {
@@ -184,20 +183,16 @@
     },
     "facets": {
         "talen_platform": {
-            "title": "TALEN platform",
-            "type": "string"
+            "title": "TALEN platform"
         },
         "status": {
-            "title": "TALEN status",
-            "type": "string"
+            "title": "TALEN status"
         },
         "lab.title": {
-            "title": "Lab",
-            "type": "string"
+            "title": "Lab"
         },
         "award.project": {
-            "title": "Project",
-            "type": "string"
+            "title": "Project"
         }
     },
     "columns": {
@@ -217,5 +212,7 @@
             "title": "Genome assembly",
             "description": "The GRC genome assembly to which the target coordinates relate.  E.g. GRCh38"
         }
-    }
+    },
+    "changelog": "/profiles/changelogs/talen.md"
+
 }

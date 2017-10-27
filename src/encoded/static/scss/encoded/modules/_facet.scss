@@ -1,42 +1,43 @@
-.box {
+.box.facets {
     padding: 10px;
     border: 1px #ccc solid;
     border-radius: 3px;
     overflow: hidden;
+
+    .horizontal {
+        display: block;
+
+        @media screen and (min-width: $screen-sm-min) {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        @media screen and (min-width: $screen-md-min) {
+            flex-wrap: nowrap;
+            margin-left: -5px;
+            margin-right: -5px;
+        }
+
+        .facet {
+            display: block;
+
+            @media screen and (min-width: $screen-sm-min) {
+                min-width: 150px;
+                flex: 1 1 auto;
+                margin-left: 5px;
+                margin-right: 5px;
+            }
+
+            @media screen and (min-width: $screen-md-min) {
+                min-width: auto;
+            }
+        }
+    }
 }
 
-@media screen and (max-width: $screen-sm-min) {
-    .sm-no-padding {
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-    }
-    .facets.horizontal .facet {
-        width: auto !important;
-    }
-}
-@media screen and (min-width: $screen-sm-min) {
-    .facets.horizontal {
-        .facet {
-            width: 50% !important;
-            padding: 0 10px;
-            float: left;
-        }
-    }
-}
-@media screen and (min-width: $screen-lg-min) {
-    .facets.horizontal {
-        display: table;
-        width: 100%;
-        .facet {
-            width: initial !important;
-            display: table-cell;
-            float: none;
-        }
-        .facet[hidden] {
-            display: table-cell !important;
-            visibility: hidden;
-        }
-    }
+.sm-no-padding {
+    padding-left: 0;
+    padding-right: 0;
 }
 
 .clear-filters-control {
@@ -68,14 +69,17 @@
     margin-bottom: 0;
 }
 
-.facet-list { margin: 0; }
+.facet-list {
+    margin: 0;
+}
 
 .facet-list li {
     padding: 3px 10px;
     margin-bottom: 1px;
+    margin-right: 15px;
     border-radius: 5px;
     position: relative;
-    @include font-size(0.9);
+    font-size: 0.9rem;
     line-height: 1;
 
     i {
@@ -83,14 +87,37 @@
     }
 }
 
-.facet-list li#selected {
-    background: #4183c4;
+.facet-list {
+    li {
+        a {
+            display: block;
+            color: #000;
+        }
+
+        &.selected {
+            background-color: #4183c4;
+
+            a:hover {
+                color: #fff;
+            }
+        }
+
+        &.negated-selected {
+            background-color: #e50400;
+
+            a:hover {
+                color: #fff;
+            }
+        }
+    }
 }
 
-.facet-list a#selected {
-    color: #fff;
-    text-decoration: none;
-    font-weight: normal;
+.facet-list {
+    a.selected, a.negated-selected {
+        color: #fff;
+        text-decoration: none;
+        font-weight: normal;
+    }
 }
 
 .facet-list li a {
@@ -101,6 +128,20 @@
 .facet-list li a:hover {
     text-decoration: none;
     color: #3e82d7;
+}
+
+.facet-term {
+    .negated-trigger {
+        display: none;
+    }
+
+    &:hover {
+        .negated-trigger {
+            display: block;
+            float: right;
+            color: #e50400;
+        }
+    }
 }
 
 .facet-item {
@@ -115,13 +156,13 @@
 .facet-list button.btn.collapsed:before {
     content:'+ See more...' ;
     text-decoration: none;
-    @include font-size(0.85);
+    font-size: 0.85rem;
 }
 
 .facet-list button.btn:before {
     content:'- See fewer';
     text-decoration: none;
-    @include font-size(0.85);
+    font-size: 0.85rem;
 }
 
 .facet-list label {
@@ -130,7 +171,7 @@
 
 .accession {
     position: relative;
-    @include font-size(1.2);
+    font-size: 1.2rem;
     font-weight: bold;
     z-index: 0;
 
@@ -142,16 +183,16 @@
 }
 
 .accession-note {
-    @include font-size(0.9);
+    font-size: 0.9rem;
     font-weight: normal;
 
     a[href^="http"]:after {
-        @include font-size(0.9);
+        font-size: 0.9rem;
     }
 }
 
 .type {
-    @include font-size(0.9);
+    font-size: 0.9rem;
     font-weight: normal;
     color: #808080;
 }
@@ -176,7 +217,7 @@
                 padding: 0;
                 border: none;
                 background-color: transparent;
-                @include font-size(1.3);
+                font-size: 1.3rem;
             }
         }
     }
@@ -184,7 +225,7 @@
 
 .meta-title {
     margin-bottom: 7px !important;
-    @include font-size(1.1);
+    font-size: 1.1rem;
     color: #606060 !important;
 }
 
@@ -197,7 +238,7 @@ div.meta-status {
 }
 
 .highlight-row {
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: bold;
 }
 
@@ -236,20 +277,21 @@ div.meta-status {
     z-index: 10;
     list-style-type: none;
     margin: 0;
-    padding: 0;
+    padding: 10px;
     overflow: hidden;
+    border: 1px solid #a0a0a0;
 
     li {
         margin-top: 10px;
         border-bottom: 1px solid #E8E8E8;
         margin-bottom: 10px;
-        @include font-size(0.9);
+        font-size: 0.9rem;
 
         &:first {
             margin-top: 0px;
             border-bottom: 1px solid #ccc;
             margin-bottom: 10px;
-            @include font-size(0.9);
+            font-size: 0.9rem;
         }
 
     }
@@ -262,6 +304,10 @@ div.meta-status {
     .pull-right {
         position: relative;
         z-index: 2;
+    }
+
+    &.result-table-tabbed {
+        border-top: 0;
     }
 }
 
@@ -279,6 +325,14 @@ span.bar {
     top: 0;
     bottom:0;
     z-index: -1;
+    transition: width .2s;
+    animation-name: stretch-bar;
+    animation-duration: .2s;
+}
+
+@keyframes stretch-bar {
+    from { max-width: 0%; }
+    to { max-width: 100%; }
 }
 
 
@@ -286,18 +340,18 @@ span.bar {
 
 .list-author {
     margin: 0;
-    @include font-size(1.1);
+    font-size: 1.1rem;
 }
 
 .list-citation {
     margin: 0;
-    @include font-size(0.9);
+    font-size: 0.9rem;
 }
 
 .list-reference {
     display: inline;
     margin: 0 !important;
-    @include font-size(0.9);
+    font-size: 0.9rem;
 }
 
 .list-supplementary {

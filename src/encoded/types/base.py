@@ -12,7 +12,6 @@ from pyramid.traversal import (
     traverse,
 )
 import snovault
-from ..schema_formats import is_accession
 
 
 @lru_cache()
@@ -20,8 +19,8 @@ def _award_viewing_group(award_uuid, root):
     award = root.get_by_uuid(award_uuid)
     return award.upgrade_properties().get('viewing_group')
 
-# Item acls
 
+# Item acls
 ONLY_ADMIN_VIEW = [
     (Allow, 'group.admin', ['view', 'edit']),
     (Allow, 'group.read-only-admin', ['view']),
@@ -125,6 +124,7 @@ class Item(snovault.Item):
         'not compliant': ALLOW_CURRENT,
         'not reviewed': ALLOW_CURRENT,
         'not submitted for review by lab': ALLOW_CURRENT,
+        'exempt from standards': ALLOW_CURRENT,
 
         # antibody_lot
         'eligible for new data': ALLOW_CURRENT,

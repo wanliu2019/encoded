@@ -122,6 +122,7 @@ def antibody_characterization_5_6(value, system):
 @upgrade_step('biosample_characterization', '4', '5')
 @upgrade_step('rnai_characterization', '4', '5')
 @upgrade_step('construct_characterization', '4', '5')
+@upgrade_step('donor_characterization', '4', '5')
 def characterization_4_5(value, system):
     # http://redmine.encodedcc.org/issues/2591
     context = system['context']
@@ -165,3 +166,60 @@ def antibody_characterization_6_7(value, system):
 
     if 'documents' in value:
         value['documents'] = list(set(value['documents']))
+
+
+@upgrade_step('biosample_characterization', '6', '7')
+@upgrade_step('donor_characterization', '6', '7')
+@upgrade_step('rnai_characterization', '6', '7')
+@upgrade_step('construct_characterization', '6', '7')
+def characterization_6_7(value, system):
+    # Let's get all the characterizations objects back in sync on version numbers
+    return
+
+
+@upgrade_step('antibody_characterization', '7', '8')
+@upgrade_step('biosample_characterization', '7', '8')
+@upgrade_step('donor_characterization', '7', '8')
+@upgrade_step('rnai_characterization', '7', '8')
+@upgrade_step('construct_characterization', '7', '8')
+def characterization_7_8(value, system):
+    # http://redmine.encodedcc.org/issues/1384
+    if 'notes' in value:
+        if value['notes']:
+            value['notes'] = value['notes'].strip()
+        else:
+            del value['notes']
+    if 'caption' in value:
+        if value['caption']:
+            value['caption'] = value['caption'].strip()
+        else:
+            del value['caption']
+    if 'comment' in value:
+        if value['comment']:
+            value['comment'] = value['comment'].strip()
+        else:
+            del value['comment']
+    if 'submitter_comment' in value:
+        if value['submitter_comment']:
+            value['submitter_comment'] = value['submitter_comment'].strip()
+        else:
+            del value['submitter_comment']
+
+
+@upgrade_step('antibody_characterization', '9', '10')
+def antibody_characterization_9_10(value, system):
+    # http://redmine.encodedcc.org/issues/4925
+    return
+
+
+@upgrade_step('antibody_characterization', '10', '11')
+@upgrade_step('biosample_characterization', '10', '11')
+@upgrade_step('donor_characterization', '10', '11')
+@upgrade_step('rnai_characterization', '10', '11')
+@upgrade_step('construct_characterization', '10', '11')
+@upgrade_step('genetic_modification_characterization', '3', '4')
+def characterization_10_11(value, system):
+    # https://encodedcc.atlassian.net/browse/ENCD-3584
+    if 'comment' in value:
+        value['submitter_comment'] = value['comment']
+        del value['comment']
