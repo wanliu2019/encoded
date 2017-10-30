@@ -570,7 +570,7 @@ def format_subfacets(facets, result):
     return result
 
 
-def format_facets(es_results, facets, used_filters, schemas, total):
+def format_facets(es_results, facets, used_filters, schemas, total, principals):
     result = []
     # Loading facets in to the results
     if 'aggregations' not in es_results:
@@ -579,17 +579,27 @@ def format_facets(es_results, facets, used_filters, schemas, total):
     aggregations = es_results['aggregations']
     used_facets = set()
     exists_facets = set()
-    for field, options in facets:
+    for field, facet in facets:
         used_facets.add(field)
         agg_name = field.replace('.', '-')
         if agg_name in aggregations:
             terms = aggregations[agg_name][agg_name]['buckets']
             if len(terms) < 2:
                 continue
+            # internal_status exception. Only display for admin users
+            if field == 'internal_status' and 'group.admin' not in principals:
+                continue
             if 'facets' in facet:
                 subfacets = facet['facets']
                 for term in terms:
                     format_subfacets(subfacets, term)
+            facet_type = facet.get('type', 'terms')
+            if facet_type == 'exists':
+                terms = [
+                    {'key': 'yes', 'doc_count': terms['yes']['doc_count']},
+                    {'key': 'no', 'doc_count': terms['no']['doc_count']},
+                ]
+                exists_facets.add(field)
             result.append({
                 'field': field,
                 'title': facet.get('title', field),
