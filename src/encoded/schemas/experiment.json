@@ -283,10 +283,12 @@
     },
     "facets": {
         "assay_slims": {
-            "title": "Assay category"
-        },
-        "assay_title": {
-            "title": "Assay"
+            "title": "Assay category",
+            "facets": {
+                "assay_title": {
+                    "title": "Assay"
+                }
+            }
         },
         "award.project": {
             "title": "Project",
@@ -299,27 +301,25 @@
         "status": {
             "title": "Experiment status"
         },
-        "assembly": {
-            "title": "Genome assembly (visualization)"
-        },
         "replicates.library.biosample.donor.organism.scientific_name": {
-            "title": "Organism"
+            "title": "Organism",
+            "facets": {
+                "assembly": {
+                    "title": "Genome assembly (visualization)"
+                }
+            }
         },
         "target.investigated_as": {
-            "title": "Target of assay",
-            "facets": {
-                "target.label": {
-                    "title": "Label"
-                }
-            }
+            "title": "Target of assay"
+        },
+        "target.label": {
+            "title": "Label"
         },
         "replicates.library.biosample.biosample_type": {
-            "title": "Biosample type",
-            "facets": {
-                "replicates.library.biosample.biosample_term_name": {
-                    "title": "Ontology term"
-                }
-            }
+            "title": "Biosample type"
+        },
+        "replicates.library.biosample.biosample_term_name": {
+            "title": "Ontology term"
         },
         "organ_slims": {
             "title": "Organ"

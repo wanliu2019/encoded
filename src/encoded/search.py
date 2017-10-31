@@ -510,7 +510,27 @@ def search_result_actions(request, doc_types, es_results, position=None):
     # TODO we could enable them for Datasets as well here, but not sure how well it will work
     if doc_types == ['Experiment'] or doc_types == ['Annotation']:
         viz = {}
-        for bucket in aggregations['assembly']['assembly']['buckets']:
+
+        # Build an array of assembly buckets.
+        if 'assembly' in aggregations:
+            # 'assembly' is at the top level of the facets, so just copy it directly from the
+            # buckets.
+            assembly_buckets = aggregations['assembly']['assembly']['buckets']
+        else:
+            # 'assembly' must be a sub-facet in a hierarchical facet. Have to find and collect them
+            # into a single array.
+            assembly_buckets = []
+            for facet_term in aggregations:
+                facet_bucket = aggregations[facet_term][facet_term]['buckets']
+                for bucket_item in facet_bucket:
+                    if 'facets' in bucket_item:
+                        for facet in bucket_item['facets']:
+                            if facet['field'] == 'assembly':
+                                # Found an array of assembly bucket items, so add it to the array
+                                # assembly items we're collecting.
+                                assembly_buckets.extend(facet['terms'])
+
+        for bucket in assembly_buckets:
             if bucket['doc_count'] > 0:
                 assembly = bucket['key']
                 if assembly in viz:  # mm10 and mm10-minimal resolve to the same thing
