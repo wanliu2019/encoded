@@ -776,10 +776,10 @@ function countSelectedTerms(terms, facet, filters) {
 
 // Display one term within a facet.
 const Term = (props) => {
-    const { filters, facet, total, canDeselect, searchBase, onFilter } = props;
-    const term = props.term.key;
-    const count = props.term.doc_count;
-    const title = props.title || term;
+    const { filters, facet, total, canDeselect, searchBase, onFilter, term } = props;
+    const termName = term.key;
+    const count = term.doc_count;
+    const title = props.title || termName;
     const field = facet.field;
     const em = field === 'target.organism.scientific_name' ||
                 field === 'organism.scientific_name' ||
@@ -790,7 +790,7 @@ const Term = (props) => {
 
     // Determine if the given term should display selected, as well as what the href for the term
     // should be. If it *is* selected, also indicate whether it was selected for negation or not.
-    const { selected, negated, exists } = termSelected(term, facet, filters);
+    const { selected, negated, exists } = termSelected(termName, facet, filters);
     let href;
     let negationHref = '';
     if (selected && !canDeselect) {
@@ -798,15 +798,15 @@ const Term = (props) => {
     } else if (selected) {
         href = selected;
     } else if (facet.type === 'exists') {
-        if (term === 'yes') {
+        if (termName === 'yes') {
             href = `${searchBase}${field}=*`;
         } else {
             href = `${searchBase}${field}!=*`;
         }
     } else {
         // Term isn't selected. Get the href for the term, and for its negation button.
-        href = `${searchBase}${field}=${globals.encodedURIComponent(term)}`;
-        negationHref = `${searchBase}${field}!=${globals.encodedURIComponent(term)}`;
+        href = `${searchBase}${field}=${globals.encodedURIComponent(termName)}`;
+        negationHref = `${searchBase}${field}!=${globals.encodedURIComponent(termName)}`;
     }
 
     // Based on `selected` and `negated` come up with a CSS class for the <li> and <a> for the term
@@ -816,15 +816,18 @@ const Term = (props) => {
     return (
         <div className="facet-term">
             {(selected || negated || exists) ? null : <a href={negationHref} className="negated-trigger" title={'Do not include items with this term'}><i className="icon icon-minus-circle" /></a>}
-            <li className={selectedCss} key={term}>
+            <li className={selectedCss}>
                 {(selected || negated) ? null : <span className="bar" style={barStyle} />}
-                {field === 'lot_reviews.status' ? <span className={globals.statusClass(term, 'indicator pull-left facet-term-key icon icon-circle')} /> : null}
+                {field === 'lot_reviews.status' ? <span className={globals.statusClass(termName, 'indicator pull-left facet-term-key icon icon-circle')} /> : null}
                 <a className={selectedCss} href={href} onClick={href ? onFilter : null}>
                     {negated ? null : <span className="pull-right">{count}</span>}
                     <span className="facet-item">
                         {em ? <em>{title}</em> : <span>{title}</span>}
                     </span>
                 </a>
+                {term.facets && term.facets.length ?
+                    <Facet {...props} facet={term.facets[0]} filters={filters} subfacet />
+                : null}
             </li>
         </div>
     );
@@ -880,7 +883,7 @@ class Facet extends React.Component {
     }
 
     render() {
-        const { facet, filters } = this.props;
+        const { facet, filters, subfacet } = this.props;
         const title = facet.title;
         const field = facet.field;
         const total = facet.total;
@@ -934,8 +937,8 @@ class Facet extends React.Component {
 
         if ((terms.length && terms.some(term => term.doc_count)) || (field.charAt(field.length - 1) === '!')) {
             return (
-                <div className="facet">
-                    <h5>{titleComponent}</h5>
+                <div className={`facet${subfacet ? ' facet--subfacet' : ''}`}>
+                    {!subfacet ? <h5>{titleComponent}</h5> : null}
                     <ul className="facet-list nav">
                         <div>
                             {/* Display the first five terms of the facet */}
@@ -973,11 +976,12 @@ class Facet extends React.Component {
 Facet.propTypes = {
     facet: PropTypes.object,
     filters: PropTypes.array,
-    // negationFilters: PropTypes.array, // Array of filter terms used for negating a search term; passed through spread operator
+    subfacet: PropTypes.bool,
 };
 
 Facet.defaultProps = {
     width: 'inherit',
+    subfacet: false,
 };
 
 

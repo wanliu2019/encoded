@@ -273,8 +273,6 @@ def list_result_fields(request, doc_types):
 
 
 def build_terms_filter(query_filters, field, terms, query):
-    if ':' in field:
-        field = field.split(':')[-1]
     if field.endswith('!'):
         field = field[:-1]
         if not field.startswith('audit'):
@@ -316,48 +314,47 @@ def set_filters(request, query, result, static_items=None):
     """
     query_filters = query['post_filter']['bool']
     used_filters = {}
+    if static_items is None:
+        static_items = []
 
-    # Fix up field=value1:subfield=value2
-    params = request.params.dict_of_lists()
-    new_params = {}
-    to_delete = []
-    for field, terms in params.items():
-        normal_terms = []
-        for term in terms:
-            if '=' in term:
-                new_field, new_term = '{}={}'.format(field, term).rsplit('=', 1)
-                if new_field not in new_params:
-                    new_params[new_field] = []
-                new_params[new_field].append(new_term)
-            else:
-                normal_terms.append(term)
-        if normal_terms:
-            new_params[field] = normal_terms
+    # Get query string items plus any static items, then extract all the fields
+    qs_items = list(request.params.items())
+    total_items = qs_items + static_items
+    qs_fields = [item[0] for item in qs_items]
+    fields = [item[0] for item in total_items]
+
+    # Now make lists of terms indexed by field
+    all_terms = {}
+    for item in total_items:
+        if item[0] in all_terms:
+            all_terms[item[0]].append(item[1])
         else:
-            to_delete.append(field)
-    params.update(new_params)
-    for field in to_delete:
-        del params[field]
+            all_terms[item[0]] = [item[1]]
 
-    for field, terms in params.items():
-        if field in [
-                'type', 'limit', 'y.limit', 'x.limit', 'mode', 'annotation',
-                'format', 'frame', 'datastore', 'field', 'region', 'genome',
-                'sort', 'from', 'referrer']:
+    for field in fields:
+        if field in used_filters:
+            continue
+
+        terms = all_terms[field]
+        if field in ['type', 'limit', 'y.limit', 'x.limit', 'mode', 'annotation',
+                     'format', 'frame', 'datastore', 'field', 'region', 'genome',
+                     'sort', 'from', 'referrer']:
             continue
 
         # Add filter to result
-        for term in terms:
-            qs = urlencode([
-                (k.encode('utf-8'), v.encode('utf-8'))
-                for k, v in request.params.items()
-                if '{}={}'.format(k, v) != '{}={}'.format(field, term)
-            ])
-            result['filters'].append({
-                'field': field,
-                'term': term,
-                'remove': '{}?{}'.format(request.path, qs)
-            })
+        if field in qs_fields:
+            for term in terms:
+                qs = urlencode([
+                    (k.encode('utf-8'), v.encode('utf-8'))
+                    for k, v in qs_items
+                    if '{}={}'.format(k, v) != '{}={}'.format(field, term)
+                ])
+                result['filters'].append({
+                    'field': field,
+                    'term': term,
+                    'remove': '{}?{}'.format(request.path, qs)
+                })
+
         if field == 'searchTerm':
             continue
 
@@ -421,13 +418,8 @@ def set_facets(facets, used_filters, principals, doc_types):
                 query_field = field[:-1]
             else:
                 query_field = field
-            if ':' in query_field:
-                # subfacet filters should not filter their parent facet
-                if query_field.split(':')[0].split('=')[0] == facet_name:
-                    continue
-                query_field = query_field.split(':')[-1]
 
-            # if an option was selected in a facet,
+            # if an option was selected in this facet,
             # don't filter the facet to only include that option
             if query_field == facet_name:
                 continue
@@ -845,6 +837,8 @@ def search(context, request, search_type=None, return_generator=False):
         es_index = [types[type_name].item_type for type_name in doc_types if hasattr(types[type_name], 'item_type')]
 
     # Execute the query
+    import json
+    print('{}'.format(json.dumps(query)))
     if do_scan:
         es_results = es.search(body=query, index=es_index, search_type='query_then_fetch')
     else:
