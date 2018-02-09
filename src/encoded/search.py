@@ -273,6 +273,8 @@ def list_result_fields(request, doc_types):
 
 
 def build_terms_filter(query_filters, field, terms, query):
+    if ':' in field:
+        field = field.split(':')[-1]
     if field.endswith('!'):
         field = field[:-1]
         if not field.startswith('audit'):
@@ -314,47 +316,48 @@ def set_filters(request, query, result, static_items=None):
     """
     query_filters = query['post_filter']['bool']
     used_filters = {}
-    if static_items is None:
-        static_items = []
 
-    # Get query string items plus any static items, then extract all the fields
-    qs_items = list(request.params.items())
-    total_items = qs_items + static_items
-    qs_fields = [item[0] for item in qs_items]
-    fields = [item[0] for item in total_items]
-
-    # Now make lists of terms indexed by field
-    all_terms = {}
-    for item in total_items:
-        if item[0] in all_terms:
-            all_terms[item[0]].append(item[1])
+    # Fix up field=value1:subfield=value2
+    params = request.params.dict_of_lists()
+    new_params = {}
+    to_delete = []
+    for field, terms in params.items():
+        normal_terms = []
+        for term in terms:
+            if '=' in term:
+                new_field, new_term = '{}={}'.format(field, term).rsplit('=', 1)
+                if new_field not in new_params:
+                    new_params[new_field] = []
+                new_params[new_field].append(new_term)
+            else:
+                normal_terms.append(term)
+        if normal_terms:
+            new_params[field] = normal_terms
         else:
-            all_terms[item[0]] = [item[1]]
+            to_delete.append(field)
+    params.update(new_params)
+    for field in to_delete:
+        del params[field]
 
-    for field in fields:
-        if field in used_filters:
-            continue
-
-        terms = all_terms[field]
-        if field in ['type', 'limit', 'y.limit', 'x.limit', 'mode', 'annotation',
-                     'format', 'frame', 'datastore', 'field', 'region', 'genome',
-                     'sort', 'from', 'referrer']:
+    for field, terms in params.items():
+        if field in [
+                'type', 'limit', 'y.limit', 'x.limit', 'mode', 'annotation',
+                'format', 'frame', 'datastore', 'field', 'region', 'genome',
+                'sort', 'from', 'referrer']:
             continue
 
         # Add filter to result
-        if field in qs_fields:
-            for term in terms:
-                qs = urlencode([
-                    (k.encode('utf-8'), v.encode('utf-8'))
-                    for k, v in qs_items
-                    if '{}={}'.format(k, v) != '{}={}'.format(field, term)
-                ])
-                result['filters'].append({
-                    'field': field,
-                    'term': term,
-                    'remove': '{}?{}'.format(request.path, qs)
-                })
-
+        for term in terms:
+            qs = urlencode([
+                (k.encode('utf-8'), v.encode('utf-8'))
+                for k, v in request.params.items()
+                if '{}={}'.format(k, v) != '{}={}'.format(field, term)
+            ])
+            result['filters'].append({
+                'field': field,
+                'term': term,
+                'remove': '{}?{}'.format(request.path, qs)
+            })
         if field == 'searchTerm':
             continue
 
@@ -380,41 +383,21 @@ def build_aggregation(facet_name, facet_options, min_doc_count=0):
         field = 'embedded.' + facet_name
     agg_name = facet_name.replace('.', '-')
 
-    facet_type = facet_options.get('type', 'terms')
-    if facet_type == 'terms':
-        agg = {
-            'terms': {
-                'field': field,
-                'min_doc_count': min_doc_count,
-                'size': 200,
-            },
-        }
-        if exclude:
-            agg['terms']['exclude'] = exclude
-    elif facet_type == 'exists':
-        agg = {
-            'filters': {
-                'filters': {
-                    'yes': {
-                        'bool': {
-                            'must': {
-                                'exists': {'field': field}
-                            }
-                        }
-                    },
-                    'no': {
-                        'bool': {
-                            'must_not': {
-                                'exists': {'field': field}
-                            }
-                        }
-                    },
-                },
-            },
-        }
-    else:
-        raise ValueError('Unrecognized facet type {} for {} facet'.format(
-            facet_type, field))
+    agg = {
+        'terms': {
+            'field': field,
+            'min_doc_count': min_doc_count,
+            'size': 100,
+        },
+    }
+    if exclude:
+        agg['terms']['exclude'] = exclude
+    if 'facets' in facet_options:
+        subaggs = agg['aggs'] = {}
+        for subfacet_name, subfacet_options in facet_options['facets'].items():
+            subagg_name, subagg = build_aggregation(
+                subfacet_name, subfacet_options, min_doc_count=1)
+            subaggs[subagg_name] = subagg
 
     return agg_name, agg
 
@@ -438,8 +421,13 @@ def set_facets(facets, used_filters, principals, doc_types):
                 query_field = field[:-1]
             else:
                 query_field = field
+            if ':' in query_field:
+                # subfacet filters should not filter their parent facet
+                if query_field.split(':')[0].split('=')[0] == facet_name:
+                    continue
+                query_field = query_field.split(':')[-1]
 
-            # if an option was selected in this facet,
+            # if an option was selected in a facet,
             # don't filter the facet to only include that option
             if query_field == facet_name:
                 continue
@@ -525,7 +513,27 @@ def search_result_actions(request, doc_types, es_results, position=None):
     # TODO we could enable them for Datasets as well here, but not sure how well it will work
     if doc_types == ['Experiment'] or doc_types == ['Annotation']:
         viz = {}
-        for bucket in aggregations['assembly']['assembly']['buckets']:
+
+        # Build an array of assembly buckets.
+        if 'assembly' in aggregations:
+            # 'assembly' is at the top level of the facets, so just copy it directly from the
+            # buckets.
+            assembly_buckets = aggregations['assembly']['assembly']['buckets']
+        else:
+            # 'assembly' must be a sub-facet in a hierarchical facet. Have to find and collect them
+            # into a single array.
+            assembly_buckets = []
+            for facet_term in aggregations:
+                facet_bucket = aggregations[facet_term][facet_term]['buckets']
+                for bucket_item in facet_bucket:
+                    if 'facets' in bucket_item:
+                        for facet in bucket_item['facets']:
+                            if facet['field'] == 'assembly':
+                                # Found an array of assembly bucket items, so add it to the array
+                                # assembly items we're collecting.
+                                assembly_buckets.extend(facet['terms'])
+
+        for bucket in assembly_buckets:
             if bucket['doc_count'] > 0:
                 assembly = bucket['key']
                 if assembly in viz:  # mm10 and mm10-minimal resolve to the same thing
@@ -568,6 +576,23 @@ def search_result_actions(request, doc_types, es_results, position=None):
     return actions
 
 
+def format_subfacets(facets, result):
+    subfacets = []
+    for field, facet in facets.items():
+        agg_name = field.replace('.', '-')
+        agg = result.pop(agg_name)
+        buckets = agg['buckets']
+        if len(buckets):
+            subfacets.append({
+                'field': field,
+                'title': facet.get('title', field),
+                'terms': agg['buckets'],
+            })
+    if subfacets:
+        result['facets'] = subfacets
+    return result
+
+
 def format_facets(es_results, facets, used_filters, schemas, total, principals):
     result = []
     # Loading facets in to the results
@@ -577,32 +602,33 @@ def format_facets(es_results, facets, used_filters, schemas, total, principals):
     aggregations = es_results['aggregations']
     used_facets = set()
     exists_facets = set()
-    for field, options in facets:
+    for field, facet in facets:
         used_facets.add(field)
         agg_name = field.replace('.', '-')
-        if agg_name not in aggregations:
-            continue
-        all_buckets_total = aggregations[agg_name]['doc_count']
-        if not all_buckets_total > 0:
-            continue
-        # internal_status exception. Only display for admin users
-        if field == 'internal_status' and 'group.admin' not in principals:
-            continue
-        facet_type = options.get('type', 'terms')
-        terms = aggregations[agg_name][agg_name]['buckets']
-        if facet_type == 'exists':
-            terms = [
-                {'key': 'yes', 'doc_count': terms['yes']['doc_count']},
-                {'key': 'no', 'doc_count': terms['no']['doc_count']},
-            ]
-            exists_facets.add(field)
-        result.append({
-            'type': facet_type,
-            'field': field,
-            'title': options.get('title', field),
-            'terms': terms,
-            'total': all_buckets_total
-        })
+        if agg_name in aggregations:
+            terms = aggregations[agg_name][agg_name]['buckets']
+            if len(terms) < 2:
+                continue
+            # internal_status exception. Only display for admin users
+            if field == 'internal_status' and 'group.admin' not in principals:
+                continue
+            if 'facets' in facet:
+                subfacets = facet['facets']
+                for term in terms:
+                    format_subfacets(subfacets, term)
+            facet_type = facet.get('type', 'terms')
+            if facet_type == 'exists':
+                terms = [
+                    {'key': 'yes', 'doc_count': terms['yes']['doc_count']},
+                    {'key': 'no', 'doc_count': terms['no']['doc_count']},
+                ]
+                exists_facets.add(field)
+            result.append({
+                'field': field,
+                'title': facet.get('title', field),
+                'terms': terms,
+                'total': aggregations[agg_name]['doc_count']
+            })
 
     # Show any filters that aren't facets as a fake facet with one entry,
     # so that the filter can be viewed and removed
@@ -618,7 +644,7 @@ def format_facets(es_results, facets, used_filters, schemas, total, principals):
                 'title': title,
                 'terms': [{'key': v} for v in values],
                 'total': total,
-            })
+                })
 
     return result
 

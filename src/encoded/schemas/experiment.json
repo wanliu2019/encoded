@@ -295,25 +295,31 @@
     },
     "facets": {
         "assay_slims": {
-            "title": "Assay category"
-        },
-        "assay_title": {
-            "title": "Assay"
+            "title": "Assay category",
+            "facets": {
+                "assay_title": {
+                    "title": "Assay"
+                }
+            }
         },
         "award.project": {
-            "title": "Project"
-        },
-        "award.rfa": {
-            "title": "RFA"
+            "title": "Project",
+            "facets": {
+                "award.rfa": {
+                    "title": "RFA"
+                }
+            }
         },
         "status": {
             "title": "Experiment status"
         },
-        "assembly": {
-            "title": "Genome assembly (visualization)"
-        },
         "replicates.library.biosample.donor.organism.scientific_name": {
-            "title": "Organism"
+            "title": "Organism",
+            "facets": {
+                "assembly": {
+                    "title": "Genome assembly (visualization)"
+                }
+            }
         },
         "target.investigated_as": {
             "title": "Target of assay"
