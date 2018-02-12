@@ -813,23 +813,26 @@ const Term = (props) => {
     // to show it's either selected, or selected as a NOT term.
     const selectedCss = negated ? 'negated-selected' : (selected ? 'selected' : '');
 
+    const hasSubFacets = term.facets && term.facets.length;
+
     return (
-        <div className="facet-term">
-            {(selected || negated || exists) ? null : <a href={negationHref} className="negated-trigger" title={'Do not include items with this term'}><i className="icon icon-minus-circle" /></a>}
-            <li className={selectedCss}>
-                {(selected || negated) ? null : <span className="bar" style={barStyle} />}
+        <li className="facet-term">
+            {hasSubFacets ? <button className={`facet-term__disclose${this.state.discloseOpen ? ' facet-term__disclose--open' : ''}`} /> : null}
+            <div className="facet-term__line">
                 {field === 'lot_reviews.status' ? <span className={globals.statusClass(termName, 'indicator pull-left facet-term-key icon icon-circle')} /> : null}
+                {(selected || negated) ? null : <span className="bar" style={barStyle} />}
+                {(selected || negated || exists) ? null : <a href={negationHref} className="negated-trigger" title={'Do not include items with this term'}><i className="icon icon-minus-circle" /></a>}
                 <a className={selectedCss} href={href} onClick={href ? onFilter : null}>
                     {negated ? null : <span className="pull-right">{count}</span>}
                     <span className="facet-item">
                         {em ? <em>{title}</em> : <span>{title}</span>}
                     </span>
                 </a>
-                {term.facets && term.facets.length ?
-                    <Facet {...props} facet={term.facets[0]} filters={filters} subfacet />
-                : null}
-            </li>
-        </div>
+            </div>
+            {term.facets && term.facets.length ?
+                <Facet {...props} facet={term.facets[0]} filters={filters} subfacet />
+            : null}
+        </li>
     );
 };
 
