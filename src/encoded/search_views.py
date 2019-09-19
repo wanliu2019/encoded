@@ -23,6 +23,7 @@ from snovault.elasticsearch.searches.fields import NotificationResponseField
 from snovault.elasticsearch.searches.fields import NonSortableResponseField
 from snovault.elasticsearch.searches.fields import RawMatrixWithAggsResponseField
 from snovault.elasticsearch.searches.fields import RawSearchWithAggsResponseField
+from snovault.elasticsearch.searches.fields import RawTopHitsResponseField
 from snovault.elasticsearch.searches.fields import SearchBaseResponseField
 from snovault.elasticsearch.searches.fields import SortResponseField
 from snovault.elasticsearch.searches.fields import TitleResponseField
@@ -49,6 +50,7 @@ def includeme(config):
     config.add_route('encore-rna-seq-matrix', '/encore-rna-seq-matrix{slash:/?}')
     config.add_route('summary', '/summary{slash:/?}')
     config.add_route('audit', '/audit{slash:/?}')
+    config.add_route('top_hits_raw', '/top_hits_raw{slash:/?}')
     config.scan(__name__)
 
 
@@ -479,6 +481,21 @@ def audit(context, request):
             FiltersResponseField(),
             TypeOnlyClearFiltersResponseField(),
             DebugQueryResponseField()
+        ]
+    )
+    return fr.render()
+
+
+@view_config(route_name='top_hits_raw', request_method='GET', permission='search')
+def top_hits_raw(context, request):
+    fr = FieldedResponse(
+        _meta={
+            'params_parser': ParamsParser(request)
+        },
+        response_fields=[
+            RawTopHitsResponseField(
+                default_item_types=DEFAULT_ITEM_TYPES
+            )
         ]
     )
     return fr.render()
