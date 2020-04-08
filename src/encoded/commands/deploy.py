@@ -11,7 +11,7 @@ Encoded Application AWS Deployment Helper
     2. Watch the logs of both machines, wait till deployment finishes. 
     3. Create the demo ami image from the instance using the commands printed in the console.
         Example create ami command
-            $ python ./cloud-config/create-ami.py $username demo $encd_instance_id
+            $ python ./cloud-config/create-ami.py $user demo $encd_instance_id
         Terminate the instance when ami image is built
     4. Add the ami-id to the ami_map['demo'] below, commit and push the code
     5. Then create a test demo
@@ -25,8 +25,8 @@ Encoded Application AWS Deployment Helper
         printed in the console.
 
         Examples:
-            $ python ./cloud-config/create-ami.py $username es-wait-node $encd_instance_id
-            $ python ./cloud-config/create-ami.py $username es-wait-head $encd_instance_id
+            $ python ./cloud-config/create-ami.py $user es-wait-node $encd_instance_id
+            $ python ./cloud-config/create-ami.py $user es-wait-head $encd_instance_id
         Terminate the instances when ami image is built
 
     4. Add the ami-id to the ami_map['es-wait-node-cluster'] and
@@ -43,7 +43,7 @@ Encoded Application AWS Deployment Helper
         printed in the console.
 
         Example:
-        $ python ./cloud-config/create-ami.py $username frontend $encd_instance_id
+        $ python ./cloud-config/create-ami.py $user frontend $encd_instance_id
         Terminate the instance when ami image is built
     
     4. Add the ami-id to the ami_map['fe-cluster'] below, commit and push the code.
@@ -135,7 +135,11 @@ def _tag_ec2_instance(instance, tag_data, elasticsearch, cluster_name):
         {'Key': 'Name', 'Value': tag_data['name']},
         {'Key': 'branch', 'Value': tag_data['branch']},
         {'Key': 'commit', 'Value': tag_data['commit']},
-        {'Key': 'started_by', 'Value': tag_data['username']},
+        {'Key': 'started_by', 'Value': tag_data['user']},
+        {'Key': 'project', 'Value': tag_data['project']},
+        {'Key': 'commit_version', 'Value': tag_data['commit_version']},
+        {'Key': 'user', 'Value': tag_data['user']},
+        {'Key': 'user_group', 'Value': tag_data['user_group']},
     ]
     if elasticsearch:
         tags.append({'Key': 'elasticsearch', 'Value': 'yes'})
@@ -221,11 +225,16 @@ def _get_commit_sha_for_branch(branch_name):
 
 def _get_instances_tag_data(main_args):
     instances_tag_data = {
-        'branch': main_args.branch,
-        'commit': None,
         'short_name': _short_name(main_args.name),
         'name': main_args.name,
-        'username': None,
+        'Name': None,
+        'branch': main_args.branch,
+        'commit': None,
+        'started_by': None,
+        'project': main_args.project,
+        'commit_version': main_args.commit_version,
+        'user': None,
+        'user_group': main_args.user_group,
     }
     instances_tag_data['commit'] = _get_commit_sha_for_branch(instances_tag_data['branch'])
     # check if commit is a tag first then branch
@@ -243,14 +252,14 @@ def _get_instances_tag_data(main_args):
     if not is_tag and not is_branch:
         print("Commit %r not in origin. Did you git push?" % instances_tag_data['commit'])
         sys.exit(1)
-    instances_tag_data['username'] = getpass.getuser()
+    instances_tag_data['user'] = getpass.getuser()
     if instances_tag_data['name'] is None:
         instances_tag_data['short_name'] = _short_name(instances_tag_data['branch'])
         instances_tag_data['name'] = _nameify(
             '%s-%s-%s' % (
                 instances_tag_data['short_name'],
                 instances_tag_data['commit'],
-                instances_tag_data['username'],
+                instances_tag_data['user'],
             )
         )
         if main_args.es_wait or main_args.es_elect:
@@ -439,7 +448,7 @@ def _wait_and_tag_instances(
             'private_ip': instance.private_ip_address,
             'name': instances_tag_data['name'],
             'url': url,
-            'username': instances_tag_data['username'],
+            'user': instances_tag_data['user'],
         }
     return instances_info
 
@@ -659,7 +668,7 @@ def main():
             print(
                 'After it builds, create the ami: '
                 "python ./cloud-config/create-ami.py {} demo {} --profile-name {}".format(
-                    instances_tag_data['username'],
+                    instances_tag_data['user'],
                     instance_info['instance_id'],
                     main_args.profile_name,
                 )
@@ -679,7 +688,7 @@ def main():
             print(
                 'After it builds, create the ami: '
                 "python ./cloud-config/create-ami.py {} {} {} --profile-name {}".format(
-                    instances_tag_data['username'],
+                    instances_tag_data['user'],
                     arg_name,
                     instance_info['instance_id'],
                     main_args.profile_name,
@@ -703,7 +712,7 @@ def main():
                     print(
                         'After it builds, create the ami: '
                         "python ./cloud-config/create-ami.py {} es-wait-node {} --profile-name {}".format(
-                            instances_tag_data['username'],
+                            instances_tag_data['user'],
                             node_info['instance_id'],
                             main_args.profile_name,
                         )
@@ -720,7 +729,7 @@ def main():
             print(
                 'After it builds, create the ami: '
                 "python ./cloud-config/create-ami.py {} frontend {} --profile-name {}".format(
-                    instances_tag_data['username'],
+                    instances_tag_data['user'],
                     instance_info['instance_id'],
                     main_args.profile_name,
                 )
@@ -852,6 +861,9 @@ def _parse_args():
     parser.add_argument('--wale-s3-prefix', default='s3://encoded-backups-prod/production-pg11')
 
     # AWS
+    parser.add_argument('--project', default='encoded', help="Instance tag for filtering")
+    parser.add_argument('--commit-version', default='0', help="Instance tag for filtering")
+    parser.add_argument('--user-group', default=None, help="Instance tag for filtering")
     parser.add_argument('--profile-name', default='default', help="AWS creds profile")
     parser.add_argument('--iam-role', default='encoded-instance', help="Frontend AWS iam role")
     parser.add_argument('--iam-role-es', default='elasticsearch-instance', help="ES AWS iam role")
@@ -1002,12 +1014,18 @@ def _parse_args():
     # This better mimics production but require a command be run after deployment.
     # - 'candidate' role is for production release that potentially can
     # connect to produciton data.
+    user_group = 'test'
     if not args.role == 'test':
+        user_group = 'demo'
         if args.release_candidate:
             args.role = 'rc'
+            user_group = 'rc'
             args.candidate = False
         elif args.candidate:
             args.role = 'candidate'
+            user_group = 'prod'
+    if args.user_group is None:
+        args.user_group = user_group
     # region_indexer is default True for everything but demos
     if args.region_indexer is not None:
         if args.region_indexer[0].lower() == 'y':
