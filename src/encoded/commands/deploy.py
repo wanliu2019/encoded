@@ -382,6 +382,7 @@ def _get_run_args(main_args, instances_tag_data, config_yaml, is_tag=False):
                 'BUILD_TYPE': 'encd-scalable-frontend-build',
                 'SECONDARY_FRONTEND': 'true',
                 'REGION_INDEX': 'false',
+                'ROLE': 'Scalabe_FE',
             })
         user_data = _get_user_data(config_yaml, data_insert, main_args)
     run_args = {
@@ -640,6 +641,7 @@ def main():
     if ec2_client is None:
         sys.exit(20)
     run_args = _get_run_args(main_args, instances_tag_data, build_config, is_tag=is_tag)
+    return 
     bdm = _get_bdm(main_args)
     # Create aws demo instance or frontend instance
     # OR instances for es_wait nodes, es_elect nodes depending on count

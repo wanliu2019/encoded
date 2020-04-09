@@ -50,7 +50,7 @@ copy_with_permission "$opts_src/$jvm_opts_filename" "$opts_dest/$jvm_opts_filena
 # elasticsearch options
 es_opts_filename="$ENCD_ES_OPT_FILENAME"
 if [ "$ENCD_CLUSTER_NAME" == 'NONE' ]; then
-    echo 'Not a elasticsearch cluster'
+    echo -e "\n\t$ENCD_INSTALL_TAG $(basename $0) Not an es cluster"
 else
     # Only append a cluster name if it is not 'NONE'
     # like single demos do not have cluster names
@@ -71,6 +71,14 @@ if [ $? -gt 0 ]; then
     exit 1
 fi
 if [ "$ENCD_BUILD_TYPE" == 'encd-es-build' ]; then
+    # Open es port for head node if pg is open
+    if [ "$ENCD_PG_OPEN" == 'true' ] && [ "$ENCD_ES_OPT_FILENAME" == 'es-cluster-head.yml' ] ; then
+        echo -e "\n\t$ENCD_INSTALL_TAG $(basename $0) ENCD_PG_OPEN is '$ENCD_PG_OPEN'. Allow remote es connections"
+        open_host='network.host: 0.0.0.0'
+        transpost_port='transport.tcp.port: 9299'
+        append_with_user "$open_host" ubuntu "$opts_src/$es_opts_filename"
+        append_with_user "$transpost_port" ubuntu "$opts_src/$es_opts_filename"
+    fi
     # For es builds we set the is installed flag here since this is the main app
     # We could have alternativily created an app-wrapper.sh for elasticsearch
     touch "$encd_is_installed_flag"

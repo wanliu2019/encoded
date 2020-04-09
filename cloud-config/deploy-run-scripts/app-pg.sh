@@ -114,6 +114,11 @@ if [ ! "$ENCD_ROLE" == 'candidate' ]; then
   append_with_user "$include_demo" 'postgres' "$PG_CONF_DEST/postgresql.conf"
 fi
 
+# Allow open postgres.  Access limited by AWS security group
+if [ "$ENCD_PG_OPEN" == 'true' ]; then
+  append_with_user "listen_addresses = '*'" 'postgres' "$PG_CONF_DEST/postgresql.conf"
+  append_with_user "host all all 0.0.0.0/0 trust" 'postgres' "$PG_CONF_DEST/pg_hba.conf"
+fi
 
 ### Create db
 echo -e "\n\t$APP_WRAPPER$ENCD_INSTALL_TAG $(basename $0) Create encode db"
