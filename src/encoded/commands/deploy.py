@@ -313,10 +313,11 @@ def _get_run_args(main_args, instances_tag_data, config_yaml, is_tag=False):
         'REGION_INDEX': str(main_args.region_indexer),
         'ROLE': main_args.role,
         'S3_AUTH_KEYS': 'addedlater',
+        'SECONDARY_FRONTEND': 'false',
         'WALE_S3_PREFIX': main_args.wale_s3_prefix,
     }
     if main_args.es_wait or main_args.es_elect:
-        # Data node clusters
+        # Remote es node clusters
         count = int(main_args.cluster_size)
         security_groups = ['elasticsearch-https']
         iam_role = main_args.iam_role_es
@@ -339,11 +340,21 @@ def _get_run_args(main_args, instances_tag_data, config_yaml, is_tag=False):
                 master_data_insert,
                 main_args,
             )
+    elif not main_args.pg_ip == 'localhost' and main_args.es_ip == 'localhost':
+        # Scalable postgres cluster
+        count = int(main_args.cluster_size)
+        security_groups = ['postgres-https']
+        iam_role = main_args.iam_role_pg
+        data_insert.update({
+            'BUILD_TYPE': 'encd-scalable-postgres-build',
+            'REGION_INDEX': 'false',
+            'CLUSTER_NAME': main_args.cluster_name,
+        })
     else:
         # Single demo or Frontends
-        security_groups = ['ssh-http-https']
-        iam_role = main_args.iam_role
         count = 1
+        iam_role = main_args.iam_role
+        security_groups = ['ssh-http-https']
         data_insert.update({
             'APP_WORKERS': main_args.app_workers,
             'BATCHUPGRADE_VARS': ' '.join(main_args.batchupgrade_vars),
@@ -361,6 +372,14 @@ def _get_run_args(main_args, instances_tag_data, config_yaml, is_tag=False):
                 'BUILD_TYPE': 'encd-demo-build',
                 'JVM_GIGS': main_args.jvm_gigs,
                 'ES_OPT_FILENAME': 'es-demo.yml',
+            })
+        if not main_args.es_ip == 'localhost' and not main_args.pg_ip == 'localhost':
+            # Scalable frontends with postgres and elasticserach pointing elsewhere
+            print('remove testing Scalable frontends')
+            data_insert.update({
+                'BUILD_TYPE': 'encd-scalable-frontend-build',
+                'SECONDARY_FRONTEND': 'true',
+                'REGION_INDEX': 'false',
             })
         user_data = _get_user_data(config_yaml, data_insert, main_args)
     run_args = {
@@ -464,7 +483,9 @@ def _get_cloud_config_yaml(main_args):
     diff_configs = main_args.diff_configs
     es_elect = main_args.es_elect
     es_wait = main_args.es_wait
+    es_ip = main_args.es_ip
     postgres_version = main_args.postgres_version
+    pg_ip = main_args.pg_ip
     save_config_name = main_args.save_config_name
     use_prebuilt_config = main_args.use_prebuilt_config
 
@@ -517,6 +538,12 @@ def _get_cloud_config_yaml(main_args):
     if diff_configs and not use_prebuilt_config:
         print('Error: --diff-configs must have --use-prebuilt-config config to diff against')
         return None, None, None
+    if not pg_ip == 'localhost' and not es_ip == 'localhost' and not cluster_name:
+        print('Error: --cluster-name required for scalable frontends(--pg-ip/--es-ip)')
+        return None, None, None
+    if not pg_ip == 'localhost' and es_ip == 'localhost' and not cluster_name:
+        print('Error: --cluster-name required for scalable postgres(--pg-ip/--es-ip)')
+        return None, None, None
     # Determine type of build from arguments
     # - es-nodes builds will overwrite the postgres version
     build_type = 'u18-demo'
@@ -524,6 +551,10 @@ def _get_cloud_config_yaml(main_args):
         build_type = 'u18-es-nodes'
     elif cluster_name:
         build_type = 'u18-frontend'
+        if not pg_ip == 'localhost' and not es_ip == 'localhost':
+            build_type = 'scalable-frontend'
+        if not pg_ip == 'localhost' and es_ip == 'localhost':
+            build_type = 'scalable-postgres'
     # elif cluster_name:
     #     build_type = 'pg{}-frontend'.format(postgres_version.replace('.', ''))
     # else:
@@ -610,6 +641,7 @@ def main():
     bdm = _get_bdm(main_args)
     # Create aws demo instance or frontend instance
     # OR instances for es_wait nodes, es_elect nodes depending on count
+    # OR secondary frontend instances if --pg-ip and --es-ip
     instances = ec2_client.create_instances(
         ImageId=main_args.image_id,
         MinCount=run_args['count'],
@@ -856,12 +888,14 @@ def _parse_args():
 
     # Database
     parser.add_argument('--postgres-version', default='11', help="Postegres version. '9.3' or '11'")
+    parser.add_argument('--pg-ip', default='localhost', help="Postgres IP.")
+    parser.add_argument('--pg-port', default=5432, help="Postgres Port.")
     parser.add_argument('--redis-ip', default='localhost', help="Redis IP.")
     parser.add_argument('--redis-port', default=6379, help="Redis Port.")
     parser.add_argument('--wale-s3-prefix', default='s3://encoded-backups-prod/production-pg11')
 
     # AWS
-    parser.add_argument('--project', default='encoded', help="Instance tag for filtering")
+    parser.add_argument('--project', default='encd-sprint-demo', help="Instance tag for filtering")
     parser.add_argument('--commit-version', default='0', help="Instance tag for filtering")
     parser.add_argument('--user-group', default=None, help="Instance tag for filtering")
     parser.add_argument('--profile-name', default='default', help="AWS creds profile")

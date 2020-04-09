@@ -74,20 +74,26 @@ cat "$src_dir/head.conf" > "$dest_path"
 sed "s/APP_WORKERS/$APP_WORKERS/" <  "$src_dir/app.conf" >> "$dest_path"
 
 # indexer processes
-cat "$src_dir/indexer-proc.conf" >> "$dest_path"
-cat "$src_dir/vis-indexer-proc.conf" >> "$dest_path"
-if [ "$REGION_INDEX" == "True" ]; then
-    cat "$src_dir/region-indexer-proc.conf" >> "$dest_path"
+if [ ! "$ENCD_SECONDARY_FRONTEND" == 'true' ]; then
+    # Only NOT Secondary frontends run indexing
+    cat "$src_dir/indexer-proc.conf" >> "$dest_path"
+    cat "$src_dir/vis-indexer-proc.conf" >> "$dest_path"
+    if [ "$REGION_INDEX" == "True" ]; then
+        cat "$src_dir/region-indexer-proc.conf" >> "$dest_path"
+    fi
 fi
 
 # Some vars
 cat "$src_dir/some-vars.conf" >> "$dest_path"
 
 # indexer directory permissions
-cat "$src_dir/indexer-dir-permission.conf" >> "$dest_path"
-cat "$src_dir/vis-indexer-dir-permission.conf" >> "$dest_path"
-if [ "$REGION_INDEX" == "True" ]; then
-    cat "$src_dir/region-indexer-dir-permission.conf" >> "$dest_path"
+if [ ! "$ENCD_SECONDARY_FRONTEND" == 'true' ]; then
+    # Only NOT Secondary frontends run indexing
+    cat "$src_dir/indexer-dir-permission.conf" >> "$dest_path"
+    cat "$src_dir/vis-indexer-dir-permission.conf" >> "$dest_path"
+    if [ "$REGION_INDEX" == "True" ]; then
+        cat "$src_dir/region-indexer-dir-permission.conf" >> "$dest_path"
+    fi
 fi
 
 # the rest
