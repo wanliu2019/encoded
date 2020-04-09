@@ -641,7 +641,6 @@ def main():
     if ec2_client is None:
         sys.exit(20)
     run_args = _get_run_args(main_args, instances_tag_data, build_config, is_tag=is_tag)
-    return 
     bdm = _get_bdm(main_args)
     # Create aws demo instance or frontend instance
     # OR instances for es_wait nodes, es_elect nodes depending on count
@@ -900,7 +899,7 @@ def _parse_args():
     parser.add_argument('--wale-s3-prefix', default='s3://encoded-backups-prod/production-pg11')
 
     # AWS
-    parser.add_argument('--project', default='encd-sprint-demo', help="Instance tag for filtering")
+    parser.add_argument('--project', default='encd-dev-demo', help="Instance tag for filtering")
     parser.add_argument('--commit-version', default='0', help="Instance tag for filtering")
     parser.add_argument('--user-group', default=None, help="Instance tag for filtering")
     parser.add_argument('--profile-name', default='default', help="AWS creds profile")
