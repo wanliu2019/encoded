@@ -307,6 +307,8 @@ def _get_run_args(main_args, instances_tag_data, config_yaml, is_tag=False):
         'HOME': '/srv/encoded',
         'INSTALL_TAG': 'encd-install',
         'JVM_GIGS': 'notused',
+        'PG_IP': main_args.pg_ip,
+        'PG_OPEN': 'true' if main_args.pg_open else 'false',
         'PG_VERSION': main_args.postgres_version,
         'PY3_PATH': '/usr/bin/python3.6',
         'REDIS_PORT': main_args.redis_port,
@@ -889,6 +891,7 @@ def _parse_args():
     # Database
     parser.add_argument('--postgres-version', default='11', help="Postegres version. '9.3' or '11'")
     parser.add_argument('--pg-ip', default='localhost', help="Postgres IP.")
+    parser.add_argument('--pg-open', action='store_true', help="Allow connections on postgres post.")
     parser.add_argument('--pg-port', default=5432, help="Postgres Port.")
     parser.add_argument('--redis-ip', default='localhost', help="Redis IP.")
     parser.add_argument('--redis-port', default=6379, help="Redis Port.")
