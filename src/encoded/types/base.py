@@ -114,6 +114,23 @@ STATUS_HIERARCHY = {
 }
 
 
+def objects_filtered_by_status(
+    objects, exclude=('deleted', 'replaced'), include=None
+):
+    if include is not None:
+        return {
+            path: obj
+            for path, obj in objects.items()
+            if obj.get('status') in include
+        }
+    else:
+        return {
+            path: obj
+            for path, obj in objects.items()
+            if obj.get('status') not in exclude
+        }
+
+
 def paths_filtered_by_status(request, paths, exclude=('deleted', 'replaced'), include=None):
     if include is not None:
         return [

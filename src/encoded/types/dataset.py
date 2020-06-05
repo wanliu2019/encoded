@@ -1,12 +1,23 @@
+import uuid
+
+from pyramid.traversal import (
+    find_root,
+    traverse,
+    resource_path,
+)
+
 from snovault import (
     abstract_collection,
     calculated_property,
     collection,
     load_schema,
 )
+from snovault.resource_views import uuid_to_path
+
 from .base import (
     Item,
     paths_filtered_by_status,
+    objects_filtered_by_status,
 )
 
 from urllib.parse import quote_plus
@@ -39,15 +50,14 @@ def item_is_revoked(request, path):
     return request.embed(path, '@@object?skip_calculated=true').get('status') == 'revoked'
 
 
-def calculate_assembly(request, files_list, status):
+def calculate_assembly(request, file_objects, status):
     assembly = set()
-    viewable_file_status = ['released','in progress']
+    viewable_file_status = ['released', 'in progress']
 
-    for path in files_list:
-        properties = request.embed(path, '@@object?skip_calculated=true')
-        if properties['status'] in viewable_file_status:
-            if 'assembly' in properties:
-                assembly.add(properties['assembly'])
+    for f_obj in file_objects:
+        if f_obj['status'] in viewable_file_status:
+            if 'assembly' in f_obj:
+                assembly.add(f_obj['assembly'])
     return list(assembly)
 
 
@@ -99,6 +109,20 @@ class Dataset(Item):
         'original_files': ('File', 'dataset'),
     }
 
+    @property
+    def _raw_original_file_objects(self):
+        try:
+            return self.__raw_original_file_objects
+        except AttributeError:
+            root = find_root(self)
+            self.__raw_original_file_objects = {}
+            for file_uuid in self.get_rev_links('original_files'):
+                ctx = root.get_by_uuid(file_uuid)
+                self.__raw_original_file_objects[
+                    resource_path(ctx)
+                ] = ctx.upgrade_properties()
+            return self.__raw_original_file_objects
+
     @calculated_property(schema={
         "title": "Original files",
         "type": "array",
@@ -109,7 +133,9 @@ class Dataset(Item):
         "notSubmittable": True,
     })
     def original_files(self, request, original_files):
-        return paths_filtered_by_status(request, original_files)
+        return list(
+            objects_filtered_by_status(self._raw_original_file_objects).keys()
+        )
 
     @calculated_property(schema={
         "title": "Contributing files",
@@ -120,23 +146,30 @@ class Dataset(Item):
         },
     })
     def contributing_files(self, request, original_files, status):
+        original_file_set = set(original_files)
         derived_from = set()
-        for path in original_files:
-            properties = request.embed(path, '@@object?skip_calculated=true')
-            derived_from.update(
-                paths_filtered_by_status(request, properties.get('derived_from', []))
-            )
-        outside_files = list(derived_from.difference(original_files))
-        if status in ('released'):
-            return paths_filtered_by_status(
-                request, outside_files,
-                include=('released',),
-            )
-        else:
-            return paths_filtered_by_status(
-                request, outside_files,
-                exclude=('revoked', 'deleted', 'replaced'),
-            )
+        for fobj in objects_filtered_by_status(
+            self._raw_original_file_objects
+        ).values():
+            uuid_to_path(request, fobj, 'derived_from')
+            new_files = set(
+                fobj.get('derived_from', [])
+            ) - derived_from - original_file_set
+            if status in ('released'):
+                derived_from |= set(
+                    paths_filtered_by_status(
+                        request, new_files,
+                        include=('released',),
+                    )
+                )
+            else:
+                derived_from |= set(
+                    paths_filtered_by_status(
+                        request, new_files,
+                        exclude=('revoked', 'deleted', 'replaced'),
+                    )
+                )
+        return list(derived_from)
 
     @calculated_property(schema={
         "title": "Files",
@@ -148,14 +181,18 @@ class Dataset(Item):
     })
     def files(self, request, original_files, status):
         if status in ('released', 'archived'):
-            return paths_filtered_by_status(
-                request, original_files,
-                include=('released', 'archived'),
+            return list(
+                objects_filtered_by_status(
+                    self._raw_original_file_objects,
+                    include=('released', 'archived'),
+                ).keys()
             )
         else:
-            return paths_filtered_by_status(
-                request, original_files,
-                exclude=('revoked', 'deleted', 'replaced'),
+            return list(
+                objects_filtered_by_status(
+                    self._raw_original_file_objects,
+                    exclude=('revoked', 'deleted', 'replaced'),
+                ).keys()
             )
 
     @calculated_property(schema={
@@ -168,8 +205,11 @@ class Dataset(Item):
     })
     def revoked_files(self, request, original_files):
         return [
-            path for path in original_files
-            if item_is_revoked(request, path)
+            path
+            for path, obj in objects_filtered_by_status(
+                self._raw_original_file_objects,
+            ).items()
+            if obj.get('status') == 'revoked'
         ]
 
     @calculated_property(define=True, schema={
@@ -180,7 +220,9 @@ class Dataset(Item):
         },
     })
     def assembly(self, request, original_files, status):
-        return calculate_assembly(request, original_files, status)
+        return calculate_assembly(
+            request, self._raw_original_file_objects.values(), status
+        )
 
     @calculated_property(condition='assembly', schema={
         "title": "Hub",
@@ -290,6 +332,20 @@ class FileSet(Dataset):
     schema = load_schema('encoded:schemas/file_set.json')
     embedded = Dataset.embedded
 
+    @property
+    def _raw_original_related_file_objects(self):
+        try:
+            return self.__raw_original_related_file_objects
+        except AttributeError:
+            root = find_root(self)
+            self.__raw_original_related_file_objects = self._raw_original_file_objects.copy()
+            for path in self.upgrade_properties().get('related_files', []):
+                ctx = traverse(root, path)['context']
+                self.__raw_original_related_file_objects[
+                    resource_path(ctx)
+                ] = ctx.upgrade_properties()
+            return self.__raw_original_related_file_objects
+
     @calculated_property(schema={
         "title": "Contributing files",
         "type": "array",
@@ -299,24 +355,28 @@ class FileSet(Dataset):
         },
     })
     def contributing_files(self, request, original_files, related_files, status):
-        files = set(original_files + related_files)
+        original_related_file_set = set(original_files + related_files)
         derived_from = set()
-        for path in files:
-            properties = request.embed(path, '@@object?skip_calculated=true')
-            derived_from.update(
-                paths_filtered_by_status(request, properties.get('derived_from', []))
-            )
-        outside_files = list(derived_from.difference(files))
-        if status in ('released'):
-            return paths_filtered_by_status(
-                request, outside_files,
-                include=('released',),
-            )
-        else:
-            return paths_filtered_by_status(
-                request, outside_files,
-                exclude=('revoked', 'deleted', 'replaced'),
-            )
+        for fobj in self._raw_original_related_file_objects.values():
+            uuid_to_path(request, fobj, 'derived_from')
+            new_files = set(
+                fobj.get('derived_from', [])
+            ) - derived_from - original_related_file_set
+            if status in ('released'):
+                derived_from |= set(
+                    paths_filtered_by_status(
+                        request, new_files,
+                        include=('released',),
+                    )
+                )
+            else:
+                derived_from |= set(
+                    paths_filtered_by_status(
+                        request, new_files,
+                        exclude=('revoked', 'deleted', 'replaced'),
+                    )
+                )
+        return list(derived_from)
 
     @calculated_property(define=True, schema={
         "title": "Files",
@@ -326,16 +386,20 @@ class FileSet(Dataset):
             "linkTo": "File",
         },
     })
-    def files(self, request, original_files, related_files, status):
+    def files(self, request, status):
         if status in ('released'):
-            return paths_filtered_by_status(
-                request, chain(original_files, related_files),
-                include=('released',),
+            return list(
+                objects_filtered_by_status(
+                    self._raw_original_related_file_objects,
+                    include=('released'),
+                ).keys()
             )
         else:
-            return paths_filtered_by_status(
-                request, chain(original_files, related_files),
-                exclude=('revoked', 'deleted', 'replaced'),
+            return list(
+                objects_filtered_by_status(
+                    self._raw_original_related_file_objects,
+                    exclude=('revoked', 'deleted', 'replaced'),
+                ).keys()
             )
 
     @calculated_property(schema={
@@ -346,10 +410,13 @@ class FileSet(Dataset):
             "linkTo": "File",
         },
     })
-    def revoked_files(self, request, original_files, related_files):
+    def revoked_files(self, request):
         return [
-            path for path in chain(original_files, related_files)
-            if item_is_revoked(request, path)
+            path
+            for path, obj in objects_filtered_by_status(
+                self._raw_original_related_file_objects,
+            ).items()
+            if obj.get('status') == 'revoked'
         ]
 
     @calculated_property(define=True, schema={
@@ -359,8 +426,12 @@ class FileSet(Dataset):
             "type": "string",
         },
     })
-    def assembly(self, request, original_files, related_files, status):
-        return calculate_assembly(request, list(chain(original_files, related_files))[:101], status)
+    def assembly(self, request, status):
+        return calculate_assembly(
+            request,
+            list(self._raw_original_related_file_objects.values())[:101],
+            status
+        )
 
 
 @collection(
@@ -435,16 +506,19 @@ class Annotation(FileSet, CalculatedVisualize):
     })
     def files(self, request, original_files, status):
         if status in ('released', 'archived'):
-            return paths_filtered_by_status(
-                request, original_files,
-                include=('released', 'archived'),
+            return list(
+                objects_filtered_by_status(
+                    self._raw_original_file_objects,
+                    include=('released', 'archived'),
+                ).keys()
             )
         else:
-            return paths_filtered_by_status(
-                request, original_files,
-                exclude=('revoked', 'deleted', 'replaced'),
+            return list(
+                objects_filtered_by_status(
+                    self._raw_original_file_objects,
+                    exclude=('revoked', 'deleted', 'replaced'),
+                ).keys()
             )
-
 
     @calculated_property(schema={
         "title": "Superseded by",
@@ -658,10 +732,12 @@ class Series(Dataset, CalculatedSeriesAssay, CalculatedSeriesBiosample, Calculat
             "type": "string",
         },
     })
-    def assembly(self, request, original_files, related_datasets, status):
-        combined_assembly = set()
-        for assembly_from_original_files in calculate_assembly(request, original_files, status):
-            combined_assembly.add(assembly_from_original_files)
+    def assembly(self, request, related_datasets, status):
+        combined_assembly = set(
+            calculate_assembly(
+                request, self._raw_original_file_objects.values(), status
+            )
+        )
         for dataset in related_datasets:
             properties = request.embed(dataset, '@@object')
             if properties['status'] not in ('deleted', 'replaced'):
