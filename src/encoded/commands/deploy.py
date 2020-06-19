@@ -130,7 +130,7 @@ def _tag_ec2_instance(
         'commit': tag_data['commit'],
         'elasticsearch': 'no',
         'elasticsearch_head': 'no',
-        'ec_cluster_name': 'single', 
+        'ec_cluster_name': 'single' if cluster_name is None else cluster_name, 
         'lcl_deploy_datetime': str(datetime.today()),
         'utc_deploy_datetime': str(datetime.utcnow()),
         # Devops
@@ -157,12 +157,16 @@ def _tag_ec2_instance(
             tags_dict['auto_shutdown'] = 'false'
             tags_dict['auto_resize'] = 'na'
             tags_dict['elastic_ip_swtich_datatime'] = 'pending'
-        elif tag_data['is_qa_demo']:
-            tags_dict['Role'] += '-qa'
-            tags_dict['section'] += '-qa'
         else:
-            tags_dict['Role'] += '-dev'
-            tags_dict['section'] += '-dev'
+            if tag_data['is_qa_demo']:
+                tags_dict['Role'] += '-qa'
+                tags_dict['section'] += '-qa'
+            else:
+                tags_dict['Role'] += '-dev'
+                tags_dict['section'] += '-dev'
+            if cluster_name:
+                tags_dict['Role'] += '-cluster'
+                tags_dict['section'] += '-cluster'
     elif profile_name == 'production':
         if role == 'candidate':
             tags_dict['Role'] += '-new-prod'
@@ -179,7 +183,7 @@ def _tag_ec2_instance(
         tags_dict['elastic_ip_swtich_datatime'] = 'na'
         if cluster_master:
             tags_dict['elasticsearch_head'] += 'yes'
-            tags_dict['Role'] += '-datahead'
+            tags_dict['Role'] += 'head'
     if arm_arch:
         tags_dict['arch'] = 'arm'
     # Create tags list
