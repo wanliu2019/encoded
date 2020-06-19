@@ -108,25 +108,25 @@ Organization deployment configuration and build files
 ### Demo Cluster(es-wait) with open postgres port: es-nodes-template.yml and app-pg-template.yml
 
 ###### This command builds the Elasticsearch cluster
-    $ export CLUSTER_NAME='encd-dev-open'
-    $ bin/deploy --full-build --cluster-name "$CLUSTER_NAME" --es-wait
+    $ export CLUSTER_NAME='rc102-scaled'
+    $ bin/deploy --cluster-name "$CLUSTER_NAME" --es-wait
 
         ### Output
         Deploying es-nodes
-        $ bin/deploy --full-build --cluster-name "$CLUSTER_NAME" --es-wait
+        $ bin/deploy --cluster-name "$CLUSTER_NAME" --es-wait
         Create instance and wait for running state
         # Deploying Head ES Node(172.31.29.190): encd-dev-open-datamaster
         ###
 
     The IP address is the --es-ip used to deploy a frontend.
-    $ export ES_IP='172.31.29.190'
+    $ export ES_IP='172.31.19.221' && export CLUSTER_NAME='rc102-scaled'
 
 ###### This command builds the front-end machine that connects to the specified elasticsearch cluster with an open postgres port.
-    $ bin/deploy --full-build --cluster-name "$CLUSTER_NAME" --es-ip "$ES_IP" --pg-open
+    $ bin/deploy --cluster-name "$CLUSTER_NAME" --es-ip "$ES_IP" --pg-open
     
         ### Output
         Deploying app-pg
-        $ bin/deploy --full-build --cluster-name encd-dev-open --es-ip 172.31.29.190 --pg-open
+        $ bin/deploy --cluster-name encd-dev-open --es-ip 172.31.29.190 --pg-open
         Create instance and wait for running state
 
         Deploying Frontend(172.31.25.255): https://encd-dev.demo.encodedcc.org
@@ -135,7 +135,7 @@ Organization deployment configuration and build files
 
 ### Demo with postgres and elasticsearch pointing at Demo Cluster: app-template.yml
     $ export PG_IP='172.31.25.255'
-    $ bin/deploy --full-build -n app-pointing-at-pg-es --cluster-name "$CLUSTER_NAME" --es-ip "$ES_IP" --pg-ip "$PG_IP"
+    $ bin/deploy -n app-pointing-at-pg-es --cluster-name "$CLUSTER_NAME" --es-ip "$ES_IP" --pg-ip "$PG_IP"
 
 
 ### (TBD) Demo with elasticsearch pointing at rds version of postgres: app-es-template.yml
