@@ -627,6 +627,7 @@ class App extends React.Component {
     * @memberof App
     */
     handleAuth0Login(authResult, retrying, createAccount = true) {
+        console.log('handleAuth0Login')
         const accessToken = authResult.accessToken;
         if (!accessToken) {
             return;
