@@ -377,7 +377,7 @@ class App extends React.Component {
             pathname: '/static/img/encode-logo-small-2x.png',
         };
         const logoUrl = url.format(logoHrefInfo);
-
+        console.log('App componentDidMount client/domain', this.clientId, this.domain)
         this.lock = new Auth0Lock(this.clientId, this.domain, {
             auth: {
                 responseType: 'token',
