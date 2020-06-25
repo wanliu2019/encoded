@@ -461,6 +461,7 @@ class App extends React.Component {
     }
 
     componentDidUpdate(prevProps, prevState) {
+        console.log('componentDidUpdate', this.state.session_cookie, prevState.session_cookie)
         if (!this.state.session || (this.state.session_cookie !== prevState.session_cookie)) {
             const updateState = {};
             updateState.session = parseSessionCookie(this.state.session_cookie);
