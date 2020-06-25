@@ -119,7 +119,7 @@ Organization deployment configuration and build files
         ###
 
     The IP address is the --es-ip used to deploy a frontend.
-    $ export ES_IP='172.31.19.221' && export CLUSTER_NAME='rc102-scaled'
+    $ export ES_IP='172.31.30.150' && export CLUSTER_NAME='rc102-scaled'
 
 ###### This command builds the front-end machine that connects to the specified elasticsearch cluster with an open postgres port.
     $ bin/deploy --cluster-name "$CLUSTER_NAME" --es-ip "$ES_IP" --pg-open
@@ -134,8 +134,10 @@ Organization deployment configuration and build files
 
 
 ### Demo with postgres and elasticsearch pointing at Demo Cluster: app-template.yml
-    $ export PG_IP='172.31.25.255'
-    $ bin/deploy -n app-pointing-at-pg-es --cluster-name "$CLUSTER_NAME" --es-ip "$ES_IP" --pg-ip "$PG_IP"
+    $ export PG_IP='172.31.29.226'
+    $ bin/deploy -n rc102-scaled-fe01 --cluster-name "$CLUSTER_NAME" --es-ip "$ES_IP" --pg-ip "$PG_IP" --instance-type m5.4xlarge
+    $ bin/deploy -n rc102-scaled-fe02 --cluster-name "$CLUSTER_NAME" --es-ip "$ES_IP" --pg-ip "$PG_IP" --instance-type m5.2xlarge
+    $ bin/deploy -n rc102-scaled-fe03 --cluster-name "$CLUSTER_NAME" --es-ip "$ES_IP" --pg-ip "$PG_IP" --instance-type m5.xlarge
 
 
 ### (TBD) Demo with elasticsearch pointing at rds version of postgres: app-es-template.yml
