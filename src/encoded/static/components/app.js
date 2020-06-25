@@ -630,6 +630,7 @@ class App extends React.Component {
         console.log('handleAuth0Login')
         const accessToken = authResult.accessToken;
         if (!accessToken) {
+            console.log('handleAuth0Login no access token')
             return;
         }
         this.sessionPropertiesRequest = true;
@@ -642,22 +643,26 @@ class App extends React.Component {
             },
             body: JSON.stringify({ accessToken }),
         }).then((response) => {
+            console.log('handleAuth0Login tten 1')
             this.lock.hide();
             if (!response.ok) {
                 throw response;
             }
             return response.json();
         }).then((sessionProperties) => {
+            console.log('handleAuth0Login tten 2')
             this.setState({ session_properties: sessionProperties });
             this.sessionPropertiesRequest = null;
             return this.initializeCartFromSessionProperties(sessionProperties);
         }).then(() => {
+            console.log('handleAuth0Login tten 3')
             let nextUrl = window.location.href;
             if (window.location.hash === '#logged-out') {
                 nextUrl = window.location.pathname + window.location.search;
             }
             this.navigate(nextUrl, { replace: true });
         }, (err) => {
+            console.log('handleAuth0Login error')
             if (err.status === 403 && createAccount) {
                 this.setState({ eulaModalVisibility: true });
             } else {
