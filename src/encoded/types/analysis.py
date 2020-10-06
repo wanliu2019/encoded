@@ -7,6 +7,66 @@ from snovault.util import try_to_get_field_from_item_with_skip_calculated_first
 from .base import Item
 
 
+def report_quality_metric(request, file_objects, quality_metric_definition):
+    quality_metrics_report = {quality_metric_definition['report_name']: []}
+    for f_obj in file_objects:
+        if any(
+            (
+                f_obj[k] != quality_metric_definition['file_filters'][k]
+                and quality_metric_definition['file_filters'][k] not in f_obj[k]
+            )
+            for k in quality_metric_definition['file_filters']
+        ):
+            continue
+        for qm in f_obj.get('quality_metrics', []):
+            qm_obj = request.embed(qm, '@@object')
+            if any(
+                (
+                    qm_obj[k] != quality_metric_definition['quality_metric_filters'][k]
+                    and quality_metric_definition['quality_metric_filters'][k] not in qm_obj[k]
+                )
+                for k in quality_metric_definition['quality_metric_filters']
+            ):
+                continue
+            qm_value = qm_obj[quality_metric_definition['quality_metric_name']]
+            quality_metrics_report[
+                quality_metric_definition['report_name']
+            ].append(qm_value)
+        # The following two lines are for test only
+        f_obj['award_rfa'] = request.embed(f_obj['award'], '@@object')['rfa']
+        f_obj['target'] = 'test_target'
+        quality = []
+        for standard in quality_metric_definition.get('standards', []):
+            if any(
+                (
+                    f_obj[k] != standard['standard_filters'][k]
+                    and f_obj[k] not in standard['standard_filters'][k]
+                )
+                for k in standard['standard_filters']
+            ):
+                continue
+            for v in quality_metrics_report[
+                quality_metric_definition['report_name']
+            ]:
+                # The following order matters and depends a lot on the schema
+                # definition. This might not be a good coding practice and
+                # and to be improved.
+                for level in [
+                    'pass',
+                    'warning',
+                    'not_compliant',
+                    'error',
+                ]:
+                    if v > standard[level]:
+                        quality.append(level)
+                        break
+        if quality:
+            quality_metrics_report[
+                quality_metric_definition['report_name'] + '_quality'
+            ] = quality
+    return quality_metrics_report
+
+
 @collection(
     name='analyses',
     unique_key='accession',
@@ -188,3 +248,27 @@ class Analysis(Item):
             ]
             if lab is not None
         })
+
+    # Don't specify schema as this just overwrites the existing value
+    @calculated_property()
+    def quality_metrics_report(self, request, files, pipelines=[]):
+        qm_defs = request.embed(
+            pipelines[0], '@@object?skip_calculated=true'
+        ).get('quality_metric_definitions', [])
+        file_objects = [
+            request.embed(
+                f,
+                '@@object_with_select_calculated_properties?field=quality_metrics'
+            )
+            for f in files
+        ]
+        quality_metrics_report = {}
+        for qm_def in qm_defs:
+            quality_metrics_report.update(
+                report_quality_metric(
+                    request=request,
+                    file_objects=file_objects,
+                    quality_metric_definition=qm_def,
+                )
+            )
+        return quality_metrics_report
