@@ -21,12 +21,14 @@
         "title": {
             "title": "Title",
             "description": "The preferred viewable name of this standard.",
+            "permission": "import_items",
             "type": "string",
             "pattern": "^[a-zA-Z\\d_().,-]+(?:\\s[a-zA-Z\\d_().,-]+)*$"
         },
         "name": {
             "title": "Quality standard name",
             "description": "Unique name of this quality standard. Only lower case letter, numbers and dash are allowed",
+            "permission": "import_items",
             "type": "string",
             "pattern": "^[a-z0-9-]+$"
         },
