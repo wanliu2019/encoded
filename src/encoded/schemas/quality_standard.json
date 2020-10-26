@@ -53,6 +53,7 @@
                         "title": "File filters",
                         "description": "Defines which file(s) should be used to look for this quality metric.",
                         "type": "object",
+                        "properties": {},
                         "additionalProperties": {
                             "oneOf": [
                                 { "type": "string" },
@@ -69,6 +70,7 @@
                         "title": "Quality metric object filters",
                         "description": "Defines which quality metric(s) on the file(s) defined aboved should be used to look for this quality metric.",
                         "type": "object",
+                        "properties": {},
                         "additionalProperties": {
                             "oneOf": [
                                 { "type": "string" },
