@@ -26,12 +26,11 @@ from snovault.elasticsearch.indexer import (
     get_current_xmin
 )
 
-from snovault.elasticsearch.indexer_state import (
-    IndexerState,
-    SEARCH_MAX
+from snovault.elasticsearch.indexer_state import IndexerState
+from snovault.elasticsearch.interfaces import (
+    SEARCH_MAX,
+    all_uuids,
 )
-
-from snovault.elasticsearch.interfaces import all_uuids
 
 from .vis_defines import (
     VISIBLE_DATASET_TYPES_LC,

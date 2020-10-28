@@ -21,13 +21,10 @@ from snovault import DBSESSION, COLLECTIONS
 from snovault.elasticsearch.indexer import (
     Indexer
 )
-from snovault.elasticsearch.indexer_state import (
-    SEARCH_MAX,
-    IndexerState,
-)
-
+from snovault.elasticsearch.indexer_state import IndexerState
 from snovault.elasticsearch.interfaces import (
     ELASTIC_SEARCH,
+    SEARCH_MAX,
     SNP_SEARCH_ES,
     INDEXER,
     all_uuids,
