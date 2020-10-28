@@ -1,8 +1,10 @@
 from pyramid.view import view_config
 from encoded.vis_defines import vis_format_url
 from snovault import TYPES
-from snovault.elasticsearch.interfaces import ELASTIC_SEARCH
-from snovault.elasticsearch.indexer import MAX_CLAUSES_FOR_ES
+from snovault.elasticsearch.interfaces import (
+    ELASTIC_SEARCH,
+    MAX_CLAUSES_FOR_ES,
+)
 from .batch_download import get_peak_metadata_links
 from collections import OrderedDict
 import requests
