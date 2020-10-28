@@ -24,13 +24,13 @@ from snovault.elasticsearch.indexer import (
 from snovault.elasticsearch.indexer_state import (
     SEARCH_MAX,
     IndexerState,
-    all_uuids
 )
 
 from snovault.elasticsearch.interfaces import (
     ELASTIC_SEARCH,
     SNP_SEARCH_ES,
     INDEXER,
+    all_uuids,
 )
 
 log = logging.getLogger(__name__)

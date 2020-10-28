@@ -28,9 +28,10 @@ from snovault.elasticsearch.indexer import (
 
 from snovault.elasticsearch.indexer_state import (
     IndexerState,
-    all_uuids,
     SEARCH_MAX
 )
+
+from snovault.elasticsearch.interfaces import all_uuids
 
 from .vis_defines import (
     VISIBLE_DATASET_TYPES_LC,
