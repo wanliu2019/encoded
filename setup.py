@@ -25,7 +25,6 @@ INSTALL_REQUIRES = [
     "cfn-lint==0.26.2",
     "chardet==3.0.4",
     "collective.recipe.cmd==0.11",
-    "collective.recipe.modwsgi==2.1",
     "collective.recipe.template==2.1",
     "coverage==5.0.2",
     "cryptography==2.8",
