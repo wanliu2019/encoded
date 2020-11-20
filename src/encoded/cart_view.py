@@ -100,7 +100,7 @@ class Cart:
     or a list of uuids (@ids also work):
     * `cart = Cart(request)` or `cart = Cart(request, uuids=['xyz'])`
     * `cart.elements` return all elements in the cart(s)
-    * `cart.as_params()` return [('@id', '/carts/xyz')] tuples for use in filters
+    * `cart.as_params()` return [('@id', '/elements/xyz')] tuples for use in filters
     '''
 
     def __init__(self, request, uuids=None):
