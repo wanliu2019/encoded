@@ -88,3 +88,84 @@ def test_get_or_create_cart_by_user(cart_submitter_testapp, submitter):
 
 def test_get_or_create_cart_no_user(testapp):
     testapp.get('/carts/@@get-cart', status=400)
+
+
+def test_cart_object_init(dummy_request):
+    from encoded.cart_view import Cart
+    cart = Cart(dummy_request)
+    assert isinstance(cart, Cart)
+    assert cart.request == dummy_request
+    assert cart .uuids == []
+
+
+def test_cart_object_get_carts_from_params(dummy_request):
+    from encoded.cart_view import Cart
+    cart = Cart(dummy_request)
+    assert cart._get_carts_from_params() == []
+    dummy_request.environ['QUERY_STRING'] = (
+        'cart=abc123&cart=def456'
+    )
+    cart = Cart(dummy_request)
+    assert cart._get_carts_from_params() == ['abc123', 'def456']
+
+
+def test_cart_object_try_to_get_elements_from_cart(cart, submitter, experiment, dummy_request, threadlocals, testapp):
+    testapp.patch_json(
+        cart['@id'],
+        {'elements': [experiment['@id']]}
+    )
+    from encoded.cart_view import Cart
+    c = Cart(dummy_request, uuids=[cart['uuid']])
+    assert c.uuids == [cart['uuid']]
+    elements = c._try_to_get_elements_from_cart(cart['uuid'])
+    assert elements == [experiment['@id']]
+    assert c._try_to_get_elements_from_cart('abc') == []
+
+
+def test_cart_object_get_elements_from_carts(cart, submitter, experiment, dummy_request, threadlocals, testapp):
+    testapp.patch_json(
+        cart['@id'],
+        {'elements': [experiment['@id']]}
+    )
+    from encoded.cart_view import Cart
+    dummy_request.environ['QUERY_STRING'] = (
+        f'cart={cart["@id"]}'
+    )
+    c = Cart(dummy_request)
+    elements = list(c._get_elements_from_carts())
+    assert elements == [experiment['@id']]
+    c = Cart(dummy_request, uuids=[cart['@id']])
+    elements = list(c._get_elements_from_carts())
+    assert elements == [experiment['@id']]
+    c = Cart(dummy_request, uuids=[cart['uuid']])
+    elements = list(c._get_elements_from_carts())
+    assert elements == [experiment['@id']]
+    c = Cart(dummy_request, uuids=['abc'])
+    elements = list(c._get_elements_from_carts())
+    assert elements == []
+
+
+def test_cart_object_elements(cart, submitter, experiment, dummy_request, threadlocals, testapp):
+    testapp.patch_json(
+        cart['@id'],
+        {'elements': [experiment['@id'], experiment['@id']]}
+    )
+    from encoded.cart_view import Cart
+    dummy_request.environ['QUERY_STRING'] = (
+        f'cart={cart["uuid"]}'
+    )
+    c = Cart(dummy_request)
+    assert list(c.elements) == [experiment['@id'], experiment['@id']]
+
+
+def test_cart_object_as_params(cart, submitter, experiment, dummy_request, threadlocals, testapp):
+    testapp.patch_json(
+        cart['@id'],
+        {'elements': [experiment['@id'], experiment['@id']]}
+    )
+    from encoded.cart_view import Cart
+    dummy_request.environ['QUERY_STRING'] = (
+        f'cart={cart["uuid"]}'
+    )
+    c = Cart(dummy_request)
+    assert c.as_params() == [('@id', experiment['@id']), ('@id', experiment['@id'])]
