@@ -559,6 +559,7 @@ def cart_report(context, request):
     )
     return fr.render()
 
+
 @view_config(route_name='cart-matrix', request_method='GET', permission='search')
 def cart_matrix(context, request):
     fr = FieldedResponse(
