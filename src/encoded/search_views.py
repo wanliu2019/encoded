@@ -2,6 +2,8 @@ from pyramid.view import view_config
 
 from encoded.cart_view import Cart
 from encoded.searches.fields import CartSearchWithFacetsResponseField
+from encoded.searches.fields import CartReportWithFacetsResponseField
+from encoded.searches.fields import CartMatrixWithFacetsResponseField
 from encoded.searches.fields import CartFiltersResponseField
 
 from snovault.elasticsearch.searches.interfaces import AUDIT_TITLE
