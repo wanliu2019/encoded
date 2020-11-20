@@ -491,8 +491,11 @@ def audit(context, request):
 
 @view_config(route_name='cart-search', request_method='GET', permission='search')
 def cart_search(context, request):
+    '''
+    Like search but takes cart params.
+    '''
     # Note the order of rendering matters for some fields, e.g. AllResponseField and
-    # NotificationResponseField depend on results from BasicSearchWithFacetsResponseField.
+    # NotificationResponseField depend on results from CartSearchWithFacetsResponseField.
     fr = FieldedResponse(
         _meta={
             'params_parser': ParamsParser(request)
