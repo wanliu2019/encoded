@@ -95,11 +95,19 @@ def search_elements(context, request):
 
 
 class Cart:
+    '''
+    Pass either a request with a query string with `?cart=foo&cart=bar` params
+    or a list of uuids (@ids also work):
+    * `cart = Cart(request)` or `cart = Cart(request, uuids=['xyz'])`
+    * `cart.elements` return all elements in the cart(s)
+    * `cart.as_params()` return [('@id', '/carts/xyz')] tuples for use in filters
+    '''
 
     def __init__(self, request, uuids=None):
         self.request = request
         self.query_string = QueryString(request)
         self.uuids = uuids or []
+        self._elements = []
 
     def _get_carts_from_params(self):
         return self.query_string.param_values_to_list(
@@ -123,7 +131,9 @@ class Cart:
 
     @property
     def elements(self):
-        yield from self._get_elements_from_carts()
+        if not self._elements:
+            self._elements = list(self._get_elements_from_carts())
+        yield from self._elements
 
     def as_params(self):
         return [
