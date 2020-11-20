@@ -1,8 +1,8 @@
 from encoded.searches.mixins import CartAggsToFacetsMixin
-from snovault.elasticsearch.searches.responses import BasicQueryResponseWithFacet
+from snovault.elasticsearch.searches.responses import BasicQueryResponseWithFacets
 
 
-class CartQueryResponseWithFacet(CartAggsToFacetsMixin, BasicQueryResponseWithFacets):
+class CartQueryResponseWithFacets(CartAggsToFacetsMixin, BasicQueryResponseWithFacets):
     '''
     Like BasicQueryResponseWithFacets but uses CartAggsToFacetsMixin instead of AggsToFacetsMixin.
     '''

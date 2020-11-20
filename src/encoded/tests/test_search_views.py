@@ -690,7 +690,7 @@ def test_search_views_cart_search_view_filters(index_workbook, testapp):
     assert len(r.json['facets']) >= 30
     assert r.json['@id'] == '/cart-search/?type=Experiment&award.@id=/awards/ENCODE2-Mouse/&accession=ENCSR000ADI&status=released'
     assert r.json['@context'] == '/terms/'
-    assert r.json['@type'] == ['CartSearch']
+    assert r.json['@type'] == ['Search']
     assert r.json['total'] == 1
     assert r.json['notification'] == 'Success'
     assert len(r.json['filters']) == 4
