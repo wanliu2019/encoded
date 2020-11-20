@@ -502,7 +502,7 @@ def cart_search(context, request):
                 title='Cart search'
             ),
             TypeResponseField(
-                at_type=['CartSearch']
+                at_type=[SEARCH_TITLE]
             ),
             IDResponseField(),
             ContextResponseField(),
