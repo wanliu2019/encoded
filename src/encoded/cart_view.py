@@ -118,7 +118,7 @@ class Cart:
         try:
             cart = self.request.embed(
                 uuid,
-                '@@filtered_object?include=elements'
+                '@@object'
             )
         except KeyError:
             cart = {}
