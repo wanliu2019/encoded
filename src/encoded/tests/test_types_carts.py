@@ -158,7 +158,8 @@ def test_cart_object_elements(cart, submitter, experiment, dummy_request, thread
     assert list(c.elements) == [experiment['@id'], experiment['@id']]
 
 
-def test_cart_object_as_params(cart, submitter, experiment, dummy_request, threadlocals, testapp):
+def test_cart_object_as_params(cart, submitter, experiment, dummy_request, threadlocals, testapp, mocker):
+    mocker.spy(dummy_request, 'embed')
     testapp.patch_json(
         cart['@id'],
         {'elements': [experiment['@id'], experiment['@id']]}
@@ -168,4 +169,55 @@ def test_cart_object_as_params(cart, submitter, experiment, dummy_request, threa
         f'cart={cart["uuid"]}'
     )
     c = Cart(dummy_request)
+    assert dummy_request.embed.call_count == 0
     assert c.as_params() == [('@id', experiment['@id']), ('@id', experiment['@id'])]
+    assert dummy_request.embed.call_count == 1
+    # Cache value
+    assert c.as_params() == [('@id', experiment['@id']), ('@id', experiment['@id'])]
+    assert dummy_request.embed.call_count == 1
+
+
+def test_cart_object_no_elements(cart, submitter, experiment, dummy_request, threadlocals, testapp):
+    from encoded.cart_view import Cart
+    dummy_request.environ['QUERY_STRING'] = (
+        f'cart={cart["uuid"]}'
+    )
+    c = Cart(dummy_request)
+    assert list(c.elements) == []
+    assert c.as_params() == []
+
+
+def test_cart_object_no_carts(cart, submitter, experiment, dummy_request, threadlocals, testapp):
+    from encoded.cart_view import Cart
+    c = Cart(dummy_request)
+    assert list(c.elements) == []
+    assert c.as_params() == []
+
+
+def test_cart_object_two_carts(cart, submitter, experiment, dummy_request, threadlocals, testapp, mocker):
+    mocker.spy(dummy_request, 'embed')
+    testapp.patch_json(
+        cart['@id'],
+        {'elements': [experiment['@id'], experiment['@id']]}
+    )
+    from encoded.cart_view import Cart
+    dummy_request.environ['QUERY_STRING'] = (
+        f'cart={cart["uuid"]}&cart={cart["@id"]}'
+    )
+    c = Cart(dummy_request)
+    assert dummy_request.embed.call_count == 0
+    assert c.as_params() == [
+        ('@id', experiment['@id']),
+        ('@id', experiment['@id']),
+        ('@id', experiment['@id']),
+        ('@id', experiment['@id'])
+    ]
+    assert dummy_request.embed.call_count == 2
+    # Cache value
+    assert c.as_params() == [
+        ('@id', experiment['@id']),
+        ('@id', experiment['@id']),
+        ('@id', experiment['@id']),
+        ('@id', experiment['@id'])
+    ]
+    assert dummy_request.embed.call_count == 2
