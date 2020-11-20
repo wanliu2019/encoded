@@ -1,5 +1,9 @@
 from pyramid.view import view_config
 
+from encoded.cart_view import Cart
+from encoded.searches.fields import CartSearchWithFacetsResponseField
+from encoded.searches.fields import CartFiltersResponseField
+
 from snovault.elasticsearch.searches.interfaces import AUDIT_TITLE
 from snovault.elasticsearch.searches.interfaces import MATRIX_TITLE
 from snovault.elasticsearch.searches.interfaces import REPORT_TITLE
@@ -49,6 +53,7 @@ def includeme(config):
     config.add_route('encore-rna-seq-matrix', '/encore-rna-seq-matrix{slash:/?}')
     config.add_route('summary', '/summary{slash:/?}')
     config.add_route('audit', '/audit{slash:/?}')
+    config.add_route('cart-search', '/cart-search{slash:/?}')
     config.scan(__name__)
 
 
@@ -478,6 +483,39 @@ def audit(context, request):
             NotificationResponseField(),
             FiltersResponseField(),
             TypeOnlyClearFiltersResponseField(),
+            DebugQueryResponseField()
+        ]
+    )
+    return fr.render()
+
+
+@view_config(route_name='cart-search', request_method='GET', permission='search')
+def cart_search(context, request):
+    # Note the order of rendering matters for some fields, e.g. AllResponseField and
+    # NotificationResponseField depend on results from BasicSearchWithFacetsResponseField.
+    fr = FieldedResponse(
+        _meta={
+            'params_parser': ParamsParser(request)
+        },
+        response_fields=[
+            TitleResponseField(
+                title='Cart search'
+            ),
+            TypeResponseField(
+                at_type=['CartSearch']
+            ),
+            IDResponseField(),
+            ContextResponseField(),
+            CartSearchWithFacetsResponseField(
+                default_item_types=DEFAULT_ITEM_TYPES,
+                cart=Cart(request),
+            ),
+            AllResponseField(),
+            NotificationResponseField(),
+            CartFiltersResponseField(),
+            ClearFiltersResponseField(),
+            ColumnsResponseField(),
+            SortResponseField(),
             DebugQueryResponseField()
         ]
     )

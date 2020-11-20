@@ -676,3 +676,26 @@ def test_search_views_entex_matrix_response(index_workbook, testapp):
     assert len(
         r.json['matrix']['y']['biosample_ontology.classification']['buckets'][0]['biosample_ontology.term_name']['buckets']
     ) > 0
+
+
+def test_search_views_cart_search_view_filters(index_workbook, testapp):
+    r = testapp.get(
+        '/cart-search/?type=Experiment&award.@id=/awards/ENCODE2-Mouse/&accession=ENCSR000ADI&status=released'
+    )
+    assert r.json['title'] == 'Cart search'
+    assert len(r.json['@graph']) == 1
+    assert r.json['@graph'][0]['accession'] == 'ENCSR000ADI'
+    assert r.json['@graph'][0]['status'] == 'released'
+    assert 'Experiment' in r.json['@graph'][0]['@type']
+    assert len(r.json['facets']) >= 30
+    assert r.json['@id'] == '/cart-search/?type=Experiment&award.@id=/awards/ENCODE2-Mouse/&accession=ENCSR000ADI&status=released'
+    assert r.json['@context'] == '/terms/'
+    assert r.json['@type'] == ['CartSearch']
+    assert r.json['total'] == 1
+    assert r.json['notification'] == 'Success'
+    assert len(r.json['filters']) == 4
+    assert r.status_code == 200
+    assert r.json['clear_filters'] == '/cart-search/?type=Experiment'
+    assert 'debug' not in r.json
+    assert 'columns' in r.json
+    assert 'sort' in r.json
