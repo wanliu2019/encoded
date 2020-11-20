@@ -8,6 +8,7 @@ from urllib.parse import (
 from collections import OrderedDict
 
 from snovault import COLLECTIONS
+from snovault.elasticsearch.searches.parsers import QueryString
 
 
 CART_USER_MAX = 30  # Maximum number of non-deleted carts allowed per non-admin user
@@ -91,3 +92,41 @@ def search_elements(context, request):
     path = '/search/?%s' % urlencode(param_list, True)
     results = request.embed(path, as_user=True)
     return results
+
+
+class Cart:
+
+    def __init__(self, request, uuids=None):
+        self.request = request
+        self.query_string = QueryString(request)
+        self.uuids = uuids or []
+
+    def _get_carts_from_params(self):
+        return self.query_string.param_values_to_list(
+            params=self.query_string.get_cart()
+        )
+
+    def _try_to_get_elements_from_cart(self, uuid):
+        try:
+            cart = self.request.embed(
+                uuid,
+                '@@filtered_object?include=elements'
+            )
+        except KeyError:
+            cart = {}
+        return cart.get('elements', [])
+
+    def _get_elements_from_carts(self):
+        carts = self.uuids or self._get_carts_from_params()
+        for cart in carts:
+            yield from self._try_to_get_elements_from_cart(cart)
+
+    @property
+    def elements(self):
+        yield from self._get_elements_from_carts()
+
+    def as_params(self):
+        return [
+            ('@id', at_id)
+            for at_id in self.elements
+        ]
