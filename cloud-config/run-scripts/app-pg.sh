@@ -159,24 +159,25 @@ if [ ! -f "$WALE_BIN/pip" ]; then
     touch "$encd_failed_flag"
     exit 1
 fi
-sudo -H -u postgres "$WALE_BIN/pip" install pip setuptools --upgrade
-sudo -H -u postgres "$WALE_BIN/pip" install boto awscli PyYAML==5.2
-sudo -H -u postgres "$WALE_BIN/pip" install -r "$WALE_REQS_DST"
-sudo -u postgres git clone https://github.com/wal-e/wal-e.git "$WALE_DIR/wal-e"
-sudo -H -u postgres "$WALE_BIN/pip" install -e "$WALE_DIR/wal-e"
 
-### Postgres
-echo -e "\n\t$APP_WRAPPER$ENCD_INSTALL_TAG $(basename $0) Do initial wal-e backup-fetch"
-## Update db from wale backup
-sudo -u postgres pg_ctlcluster 11 main stop
-sudo -u postgres "$WALE_BIN/envdir" "$WALE_ENV" "$WALE_BIN/wal-e" backup-fetch "$PG_DATA" LATEST
-
-## Restart
-if [ "$ENCD_PG_OPEN" == 'true' ]; then
-    append_with_user "listen_addresses='*'" 'postgres' "$PG_CONF_DEST/postgresql.conf"
-    append_with_user "host all all 0.0.0.0/0 trust" 'postgres' "$PG_CONF_DEST/pg_hba.conf"
-fi
-sudo -u postgres pg_ctlcluster 11 main start
+#sudo -H -u postgres "$WALE_BIN/pip" install pip setuptools --upgrade
+#sudo -H -u postgres "$WALE_BIN/pip" install boto awscli PyYAML==5.2
+#sudo -H -u postgres "$WALE_BIN/pip" install -r "$WALE_REQS_DST"
+#sudo -u postgres git clone https://github.com/wal-e/wal-e.git "$WALE_DIR/wal-e"
+#sudo -H -u postgres "$WALE_BIN/pip" install -e "$WALE_DIR/wal-e"
+#
+#### Postgres
+#echo -e "\n\t$APP_WRAPPER$ENCD_INSTALL_TAG $(basename $0) Do initial wal-e backup-fetch"
+### Update db from wale backup
+#sudo -u postgres pg_ctlcluster 11 main stop
+#sudo -u postgres "$WALE_BIN/envdir" "$WALE_ENV" "$WALE_BIN/wal-e" backup-fetch "$PG_DATA" LATEST
+#
+### Restart
+#if [ "$ENCD_PG_OPEN" == 'true' ]; then
+#    append_with_user "listen_addresses='*'" 'postgres' "$PG_CONF_DEST/postgresql.conf"
+#    append_with_user "host all all 0.0.0.0/0 trust" 'postgres' "$PG_CONF_DEST/pg_hba.conf"
+#fi
+#sudo -u postgres pg_ctlcluster 11 main start
 
 ## Wait for psql to come up
 $ENCD_SCRIPTS_DIR/app-pg-status.sh
