@@ -121,7 +121,7 @@ class Cart:
                 '@@object'
             )
         except KeyError:
-            cart = {}
+            raise HTTPBadRequest(explanation=f'Specified cart {uuid} not found')
         return cart.get('elements', [])
 
     def _get_elements_from_carts(self):
