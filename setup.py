@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.md')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
-SNOVAULT_VERSION = "1.0.51"
+SNOVAULT_VERSION = "SNO-184-batchupgrade-wait-for-app"
 
 INSTALL_REQUIRES = [
     "Jinja2==2.11.1",
