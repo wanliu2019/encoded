@@ -8,6 +8,7 @@ from urllib.parse import (
 from collections import OrderedDict
 
 from snovault import COLLECTIONS
+from snovault.elasticsearch.searches.decorators import assert_something_returned
 from snovault.elasticsearch.searches.parsers import QueryString
 
 
@@ -140,3 +141,13 @@ class Cart:
             ('@id', at_id)
             for at_id in self.elements
         ]
+
+
+class CartWithElements(Cart):
+    '''
+    Like Cart but raises error if empty.
+    '''
+
+    @assert_something_returned('Empty cart')
+    def _try_to_get_elements_from_cart(self, uuid):
+        return super()._try_to_get_elements_from_cart(uuid)

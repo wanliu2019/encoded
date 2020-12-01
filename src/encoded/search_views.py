@@ -1,6 +1,6 @@
 from pyramid.view import view_config
 
-from encoded.cart_view import Cart
+from encoded.cart_view import CartWithElements
 from encoded.searches.fields import CartSearchWithFacetsResponseField
 from encoded.searches.fields import CartReportWithFacetsResponseField
 from encoded.searches.fields import CartMatrixWithFacetsResponseField
@@ -515,7 +515,7 @@ def cart_search(context, request):
             ContextResponseField(),
             CartSearchWithFacetsResponseField(
                 default_item_types=DEFAULT_ITEM_TYPES,
-                cart=Cart(request),
+                cart=CartWithElements(request),
             ),
             AllResponseField(),
             NotificationResponseField(),
@@ -545,7 +545,7 @@ def cart_report(context, request):
             IDResponseField(),
             ContextResponseField(),
             CartReportWithFacetsResponseField(
-                cart=Cart(request)
+                cart=CartWithElements(request)
             ),
             AllResponseField(),
             NotificationResponseField(),
@@ -578,7 +578,7 @@ def cart_matrix(context, request):
             ContextResponseField(),
             CartMatrixWithFacetsResponseField(
                 default_item_types=DEFAULT_ITEM_TYPES,
-                cart=Cart(request),
+                cart=CartWithElements(request),
             ),
             NotificationResponseField(),
             CartFiltersResponseField(),
