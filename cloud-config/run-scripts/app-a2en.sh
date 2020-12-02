@@ -25,8 +25,8 @@ a2disconf localized-error-pages
 a2disconf other-vhosts-access-log
 a2disconf serve-cgi-bin
 
-a2ensite 000-encoded-default.conf
-a2ensite 666-encoded-app.conf
+# a2ensite 000-encoded-default.conf
+# a2ensite 666-encoded-app.conf
 
 # if [ "$ENCD_REMOTE_INDEXING" == 'false' ]; then
 #     if [ "$ENCD_INDEX_PRIMARY" == 'true' ]; then
