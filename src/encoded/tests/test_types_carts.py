@@ -1,5 +1,6 @@
 import pytest
 
+from pyramid.exceptions import HTTPBadRequest
 
 def test_add_element_to_cart(testapp, cart, experiment):
     testapp.patch_json(
@@ -108,6 +109,29 @@ def test_cart_object_get_carts_from_params(dummy_request):
     cart = Cart(dummy_request)
     assert cart._get_carts_from_params() == ['abc123', 'def456']
 
+
+def test_cart_get_cart_object_or_error(cart, submitter, experiment, dummy_request, threadlocals, testapp):
+    testapp.patch_json(
+        cart['@id'],
+        {'elements': [experiment['@id']]}
+    )
+    from encoded.cart_view import Cart
+    c = Cart(dummy_request, uuids=[cart['uuid']])
+    cart_object = c._get_cart_object_or_error(cart['uuid'])
+    assert cart_object.get('@id') == cart['@id']
+    with pytest.raises(KeyError):
+        c._get_cart_object_or_error('abc')
+
+def test_cart_try_to_get_cart_object(cart, submitter, experiment, dummy_request, threadlocals, testapp):
+    testapp.patch_json(
+        cart['@id'],
+        {'elements': [experiment['@id']]}
+    )
+    from encoded.cart_view import Cart
+    c = Cart(dummy_request, uuids=[cart['uuid']])
+    cart_object = c._try_to_get_cart_object(cart['uuid'])
+    assert cart_object.get('@id') == cart['@id']
+    assert c._try_to_get_cart_object('abc') == {}
 
 def test_cart_object_try_to_get_elements_from_cart(cart, submitter, experiment, dummy_request, threadlocals, testapp):
     testapp.patch_json(
@@ -221,3 +245,34 @@ def test_cart_object_two_carts(cart, submitter, experiment, dummy_request, threa
         ('@id', experiment['@id'])
     ]
     assert dummy_request.embed.call_count == 2
+
+
+def test_cart_with_elements_object_try_to_get_cart_object(cart, submitter, experiment, dummy_request, threadlocals, testapp):
+    testapp.patch_json(
+        cart['@id'],
+        {'elements': [experiment['@id']]}
+    )
+    from encoded.cart_view import CartWithElements
+    c = CartWithElements(dummy_request, uuids=[cart['uuid']])
+    cart_object = c._try_to_get_cart_object(cart['uuid'])
+    assert cart_object.get('@id') == cart['@id']
+    with pytest.raises(HTTPBadRequest):
+        c._try_to_get_cart_object('abc')
+
+
+def test_cart_with_elements_object_try_to_get_elements_from_cart(cart, submitter, experiment, dummy_request, threadlocals, testapp):
+    testapp.patch_json(
+        cart['@id'],
+        {'elements': [experiment['@id']]}
+    )
+    from encoded.cart_view import CartWithElements
+    c = CartWithElements(dummy_request, uuids=[cart['uuid']])
+    assert c.uuids == [cart['uuid']]
+    elements = c._try_to_get_elements_from_cart(cart['uuid'])
+    assert elements == [experiment['@id']]
+    testapp.patch_json(
+        cart['@id'],
+        {'elements': []}
+    )
+    with pytest.raises(HTTPBadRequest):
+        c._try_to_get_elements_from_cart(cart['uuid'])
