@@ -115,14 +115,18 @@ class Cart:
             params=self.query_string.get_cart()
         )
 
-    def _try_to_get_elements_from_cart(self, uuid):
+    def _get_cart_object_or_error(self, uuid):
+        return self.request.embed(uuid, '@@object')
+
+    def _try_to_get_cart_object(self, uuid):
         try:
-            cart = self.request.embed(
-                uuid,
-                '@@object'
-            )
+            cart = self._get_cart_object_or_error(uuid)
         except KeyError:
-            raise HTTPBadRequest(explanation=f'Specified cart {uuid} not found')
+            cart = {}
+        return cart
+
+    def _try_to_get_elements_from_cart(self, uuid):
+        cart = self._try_to_get_cart_object(uuid)
         return cart.get('elements', [])
 
     def _get_elements_from_carts(self):
@@ -145,8 +149,14 @@ class Cart:
 
 class CartWithElements(Cart):
     '''
-    Like Cart but raises error if empty.
+    Like Cart but raises error if empty or doesn't exist.
     '''
+
+    def _try_to_get_cart_object(self, uuid):
+        try:
+            return self._get_cart_object_or_error(uuid)
+        except KeyError:
+            raise HTTPBadRequest(explanation=f'Specified cart {uuid} not found')
 
     @assert_something_returned('Empty cart')
     def _try_to_get_elements_from_cart(self, uuid):
