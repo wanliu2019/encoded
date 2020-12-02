@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.md')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
-SNOVAULT_DEP = "git+https://github.com/ENCODE-DCC/snovault.git@1.0.51#egg=snovault"
+SNOVAULT_DEP = "snovault@git+https://github.com/ENCODE-DCC/snovault.git@1.0.51"
 
 INSTALL_REQUIRES = [
     "Jinja2==2.11.1",
