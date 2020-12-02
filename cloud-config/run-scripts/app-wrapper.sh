@@ -77,6 +77,7 @@ if [ -z "$ENCD_PG_IP" ]; then
 fi
 $ENCD_SCRIPTS_DIR/app-encd.sh
 sudo -u root $ENCD_SCRIPTS_DIR/app-a2en.sh
+sleep 5m
 if [ "$ENCD_BATCHUPGRADE" == "true" ]; then
     $ENCD_SCRIPTS_DIR/app-batchupgrade.sh production.ini $BUP_VAR_1 $BUP_VAR_2 $BUP_VAR_3 $BUP_VAR_4
 fi
