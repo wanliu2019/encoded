@@ -90,6 +90,10 @@ $tab-color: #a8a8a8;
     .tab-nav {
         overflow: visible;
         margin-bottom: 1px;
+        .organism-tab {
+            font-family: 'Oswald';
+            font-weight: 300;
+        }
     }
 }
 
