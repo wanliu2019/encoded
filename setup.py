@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.md')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
-SNOVAULT_VERSION = "1.0.51"
+SNOVAULT_DEP = "git+https://github.com/ENCODE-DCC/snovault.git@1.0.51#egg=snovault"
 
 INSTALL_REQUIRES = [
     "Jinja2==2.11.1",
@@ -51,7 +51,7 @@ INSTALL_REQUIRES = [
     "repoze.debug==1.1",
     "responses==0.10.9",
     "rutter==0.2",
-    "snovault @ git+https://github.com/ENCODE-DCC/snovault.git@{}".format(SNOVAULT_VERSION),  # noqa
+    SNOVAULT_DEP,
     "soupsieve==1.9.5",
     "sshpubkeys==3.1.0",
     "strict-rfc3339==0.7",

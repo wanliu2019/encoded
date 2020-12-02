@@ -31,6 +31,13 @@ if [ $? -gt 0 ]; then
     exit 1
 fi
 
+# Install snovault editably if specified in deploy
+if [ "$ENCD_DEVELOP_SNOVAULT" == 'true' ]; then
+    source "${ENCD_VENV_DIR}/bin/activate"
+    SNOVAULT_DEP=$(grep "SNOVAULT_DEP =" setup.py | cut -d "=" -f 2 | tr -d '" ')
+    pip_install_cmd="$(which pip) install -e ${SNOVAULT_DEP} --src /srv/snovault"
+fi
+
 # Run buildout
 bin_build_cmd="$(which buildout) -c $ENCD_ROLE.cfg buildout:es-ip=$ENCD_ES_IP buildout:es-port=$ENCD_ES_PORT buildout:pg-uri=$PG_URI buildout:fe-ip=$ENCD_FE_IP buildout:remote_indexing=$ENCD_REMOTE_INDEXING buildout:index_procs=$ENCD_INDEX_PROCS buildout:index_chunk_size=$ENCD_INDEX_CHUNK_SIZE"
 echo -e "\n\t$APP_WRAPPER$ENCD_INSTALL_TAG $(basename $0) CMD: $bin_build_cmd"

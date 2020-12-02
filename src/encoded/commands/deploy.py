@@ -392,6 +392,7 @@ def _get_run_args(main_args, instances_tag_data, config_yaml, is_tag=False):
         'COMMIT': instances_tag_data['commit'],
         'CC_DIR': main_args.conf_dir_remote,
         'CLUSTER_NAME': 'NONE',
+        'DEVELOP_SNOVAULT': 'true' if main_args.develop_snovault else 'false',
         'ES_IP': main_args.es_ip,
         'ES_PORT': main_args.es_port,
         'ES_OPT_FILENAME': 'notused',
@@ -1077,6 +1078,14 @@ def _parse_args():
         default=200,
         type=check_volume_size,
         help="Size of disk. Allowed values 120, 200, and 500"
+    )
+    parser.add_argument(
+        '--develop-snovault',
+        action="store_true",
+        help=(
+            "Clone snovault into develop/snovault and install editably into the venv"
+            "instead of installing to site-packages."
+        )
     )
     args = parser.parse_args()
     # Set AMI per build type
