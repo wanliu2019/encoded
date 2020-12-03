@@ -36,7 +36,7 @@ if [ "$ENCD_DEVELOP_SNOVAULT" == 'true' ]; then
     source "${ENCD_VENV_DIR}/bin/activate"
     SNOVAULT_DEP=$(grep "SNOVAULT_DEP =" setup.py | cut -d "=" -f 2 | tr -d '" ')
     PIP_INSTALL_CMD="$(which pip) install -e ${SNOVAULT_DEP}#egg=snovault --src /srv/encoded"
-    sudo -H -u encoded "${PIP_INSTALL_CMD}"
+    sudo -H -u encoded ${PIP_INSTALL_CMD}
     if [ $? -gt 0 ]; then
         echo -e "\n\t$ENCD_INSTALL_TAG $(basename $0) ENCD FAILED: pip return error status"
         # Build has failed
