@@ -537,7 +537,7 @@ def cart_report(context, request):
         },
         response_fields=[
             TitleResponseField(
-                title=REPORT_TITLE
+                title='Cart report'
             ),
             TypeResponseField(
                 at_type=[REPORT_TITLE]
@@ -574,7 +574,9 @@ def cart_matrix(context, request):
                 at_type=[MATRIX_TITLE]
             ),
             IDResponseField(),
-            SearchBaseResponseField(),
+            SearchBaseResponseField(
+                search_base='/cart-search/'
+            ),
             ContextResponseField(),
             CartMatrixWithFacetsResponseField(
                 default_item_types=DEFAULT_ITEM_TYPES,
