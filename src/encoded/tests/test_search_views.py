@@ -783,7 +783,7 @@ def test_search_views_cart_search_view_with_cart_filter(index_workbook, testapp)
     assert r.json['notification'] == 'Success'
     assert len(r.json['filters']) == 2
     assert r.status_code == 200
-    assert r.json['clear_filters'] == '/cart-search/?type=Experiment'
+    assert r.json['clear_filters'] == '/cart-search/?type=Experiment&cart=d8850d88-946b-43e0-9199-efee2c8f5303'
     assert 'debug' in r.json
     assert 'post_filter' in r.json['debug']['raw_query']
     at_id_filters = r.json.get(
@@ -847,7 +847,7 @@ def test_search_views_cart_report_view_with_cart_filter(index_workbook, testapp)
     assert r.json['notification'] == 'Success'
     assert len(r.json['filters']) == 2
     assert r.status_code == 200
-    assert r.json['clear_filters'] == '/cart-report/?type=Experiment'
+    assert r.json['clear_filters'] == '/cart-report/?type=Experiment&cart=%2Fcarts%2Fd8850d88-946b-43e0-9199-efee2c8f5303%2F'
     assert 'debug' in r.json
     assert 'columns' in r.json
     assert 'non_sortable' in r.json
@@ -870,7 +870,7 @@ def test_search_views_cart_matrix_response_with_cart_filter(index_workbook, test
     assert 'total' in r.json
     assert r.json['title'] == 'Cart matrix'
     assert r.json['@type'] == ['Matrix']
-    assert r.json['clear_filters'] == '/cart-matrix/?type=Experiment'
+    assert r.json['clear_filters'] == '/cart-matrix/?type=Experiment&cart=d8850d88-946b-43e0-9199-efee2c8f5303'
     assert len(r.json['filters']) == 2
     assert r.json['@id'] == '/cart-matrix/?type=Experiment&cart=d8850d88-946b-43e0-9199-efee2c8f5303&debug=true'
     assert r.json['total'] >= 5
