@@ -5,6 +5,8 @@ from encoded.searches.fields import CartSearchWithFacetsResponseField
 from encoded.searches.fields import CartReportWithFacetsResponseField
 from encoded.searches.fields import CartMatrixWithFacetsResponseField
 from encoded.searches.fields import CartFiltersResponseField
+from encoded.searches.fields import ClearFiltersResponseFieldWithCarts
+from encoded.searches.fields import TypeOnlyClearFiltersResponseFieldWithCarts
 
 from snovault.elasticsearch.searches.interfaces import AUDIT_TITLE
 from snovault.elasticsearch.searches.interfaces import MATRIX_TITLE
@@ -520,7 +522,7 @@ def cart_search(context, request):
             AllResponseField(),
             NotificationResponseField(),
             CartFiltersResponseField(),
-            ClearFiltersResponseField(),
+            ClearFiltersResponseFieldWithCarts(),
             ColumnsResponseField(),
             SortResponseField(),
             DebugQueryResponseField()
@@ -550,7 +552,7 @@ def cart_report(context, request):
             AllResponseField(),
             NotificationResponseField(),
             CartFiltersResponseField(),
-            TypeOnlyClearFiltersResponseField(),
+            TypeOnlyClearFiltersResponseFieldWithCarts(),
             ColumnsResponseField(),
             NonSortableResponseField(),
             SortResponseField(),
@@ -584,7 +586,7 @@ def cart_matrix(context, request):
             ),
             NotificationResponseField(),
             CartFiltersResponseField(),
-            TypeOnlyClearFiltersResponseField(),
+            TypeOnlyClearFiltersResponseFieldWithCarts(),
             DebugQueryResponseField()
         ]
     )
