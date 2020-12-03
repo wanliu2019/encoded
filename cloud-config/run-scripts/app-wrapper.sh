@@ -70,11 +70,11 @@ fix_repo '/home/ubuntu/encoded' "$ENCD_GIT_REMOTE" "$ENCD_GIT_BRANCH" "ubuntu"
 echo -e "\n\t$ENCD_INSTALL_TAG $(basename $0) Fix encoded branch"
 fix_repo "$ENCD_HOME" "$ENCD_GIT_REMOTE" "$ENCD_GIT_BRANCH" "encoded"
 
-# # Run app install scripts
-# $ENCD_SCRIPTS_DIR/app-es-status.sh
-# if [ -z "$ENCD_PG_IP" ]; then
-#     $ENCD_SCRIPTS_DIR/app-pg.sh "$standby_mode"
-# fi
+# Run app install scripts
+$ENCD_SCRIPTS_DIR/app-es-status.sh
+if [ -z "$ENCD_PG_IP" ]; then
+    $ENCD_SCRIPTS_DIR/app-pg.sh "$standby_mode"
+fi
 $ENCD_SCRIPTS_DIR/app-encd.sh
 sudo -u root $ENCD_SCRIPTS_DIR/app-a2en.sh
 if [ "$ENCD_BATCHUPGRADE" == "true" ]; then
