@@ -5,6 +5,8 @@ from encoded.searches.queries import CartMatrixQueryFactoryWithFacets
 from encoded.searches.queries import CartReportQueryFactoryWithFacets
 from snovault.elasticsearch.searches.fields import BasicSearchWithFacetsResponseField
 from snovault.elasticsearch.searches.fields import BasicMatrixWithFacetsResponseField
+from snovault.elasticsearch.searches.fields import ClearFiltersResponseField
+from snovault.elasticsearch.searches.fields import TypeOnlyClearFiltersResponseField
 from snovault.elasticsearch.searches.fields import FiltersResponseField
 
 
@@ -64,4 +66,25 @@ class CartFiltersResponseField(FiltersResponseField):
             self.get_query_builder()._get_post_filters_with_carts()
             + self.get_params_parser().get_search_term_filters()
             + self.get_params_parser().get_advanced_query_filters()
+        )
+
+
+class ClearFiltersResponseFieldWithCarts(ClearFiltersResponseField):
+    '''
+    Like ClearFiltersResponseField but keeps cart params.
+    '''
+
+    def _get_search_term_or_types_from_query_string(self):
+        return (
+            super()._get_search_term_or_types_from_query_string()
+            + self.get_params_parser().get_cart()
+        )
+
+
+class TypeOnlyClearFiltersResponseFieldWithCarts(TypeOnlyClearFiltersResponseField):
+
+    def _get_search_term_or_types_from_query_string(self):
+        return (
+            super()._get_search_term_or_types_from_query_string()
+            + self.get_params_parser().get_cart()
         )
