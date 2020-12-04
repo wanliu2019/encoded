@@ -3,6 +3,7 @@
  */
 import React from 'react';
 import PropTypes from 'prop-types';
+import url from 'url';
 import { CartAddAllSearch } from './add_multiple';
 import { isAllowedElementsPossible } from './util';
 
@@ -12,7 +13,9 @@ import { isAllowedElementsPossible } from './util';
  * contain experiments.
  */
 const CartSearchControls = ({ searchResults }) => {
-    if (isAllowedElementsPossible(searchResults.filters)) {
+    // Don't allow cart controls when viewing a cart's contents with the /cart-search/ path.
+    const parsedUrl = url.parse(searchResults['@id']);
+    if (parsedUrl.pathname !== '/cart-search/' && isAllowedElementsPossible(searchResults.filters)) {
         return (
             <div className="cart__search-controls">
                 <CartAddAllSearch searchResults={searchResults} />

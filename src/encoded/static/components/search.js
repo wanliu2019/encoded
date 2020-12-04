@@ -1204,6 +1204,8 @@ export class ResultTable extends React.Component {
         const filters = context.filters;
         const label = 'results';
         const visualizeDisabledTitle = context.total > VISUALIZE_LIMIT ? `Filter to ${VISUALIZE_LIMIT} to visualize` : '';
+        const parsedQuery = url.parse(context['@id']);
+        const cartControls = parsedQuery.pathname !== '/cart-search/';
 
         return (
             <div className="search-results">
@@ -1221,7 +1223,7 @@ export class ResultTable extends React.Component {
                         {!(actions && actions.length > 0) ?
                             <CartSearchControls searchResults={context} />
                         : null}
-                        <ResultTableList results={results} columns={columns} cartControls />
+                        <ResultTableList results={results} columns={columns} cartControls={cartControls} />
                     </div>
                 :
                     <h4>{context.notification}</h4>

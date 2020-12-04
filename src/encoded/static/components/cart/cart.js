@@ -5,9 +5,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import _ from 'underscore';
-import { encodedURIComponent } from '../../libs/query_encoding';
 import { svgIcon } from '../../libs/svg-icons';
-import { Modal, ModalHeader, ModalBody, ModalFooter } from '../../libs/ui/modal';
 import * as Pager from '../../libs/ui/pager';
 import { Panel, PanelBody, PanelHeading, TabPanel, TabPanelPane } from '../../libs/ui/panel';
 import { tintColor, isLight } from '../datacolors';
@@ -723,7 +721,7 @@ class FileFacets extends React.Component {
             expandedStates[facetField.field] = index === 0;
         });
         this.state = {
-            /** Tracks expanded/nonexpanded states of every facet */
+            /** Tracks expanded/non-expanded states of every facet */
             expanded: expandedStates,
         };
 
@@ -845,51 +843,34 @@ FileFacets.defaultProps = {
 
 
 /**
- * Display a button that links to experiment search results. This *only* works for Experiments, not
- * FCCs for now.
+ * Display a button that links search results with the same contents as the currently viewed cart.
  */
-const MAX_SEARCHABLE_DATASETS = 125; // Maximum number of datasets for search-results links.
-const CartDatasetSearch = ({ elements, usedDatasetTypes }, reactContext) => {
-    const [isWarningVisible, setIsWarningVisible] = React.useState(false);
-
-    // Filter to the actual dataset types; not including 'all'.
-    const actualDatasetTypes = usedDatasetTypes.filter(type => type !== 'all');
+const CartDatasetSearch = ({ savedCartObj, sharedCartObj, cartType }, reactContext) => {
+    /** Cart that this button links to for search results */
+    const linkedCart = React.useRef(null);
 
     // Called when the user clicks the Dataset Search button.
     const handleButtonClick = () => {
-        if (elements.length > MAX_SEARCHABLE_DATASETS) {
-            setIsWarningVisible(true);
-        } else {
-            // Build type= query based on the types of datasets in `elements`.
-            const typeQuery = actualDatasetTypes.map(type => `type=${datasetTypes[type].type}`).join('&');
-            const datasetsQuery = elements.map(element => `@id=${encodedURIComponent(element)}`).join('&');
-            const query = `/search/?${typeQuery}&${datasetsQuery}`;
-            reactContext.navigate(query);
-        }
+        // Navigate to the search results for the specified cart's path.
+        const query = `/cart-search/?cart=${linkedCart.current['@id']}`;
+        reactContext.navigate(query);
     };
 
-    // Called when the user closes the warning modal.
-    const handleCloseClick = () => {
-        setIsWarningVisible(false);
-    };
+    // Get the object for the cart to link to search results.
+    if (cartType === 'ACTIVE') {
+        linkedCart.current = savedCartObj;
+    } else if (cartType === 'OBJECT') {
+        linkedCart.current = sharedCartObj;
+    } else {
+        // Non-logged-in cart doesn't get a link to cart search results.
+        return null;
+    }
 
     // Only display the Dataset Search button if we have at least one experiment in the cart.
-    if (elements.length > 0) {
+    if (linkedCart.current && linkedCart.current.elements && linkedCart.current.elements.length > 0) {
         return (
             <React.Fragment>
                 <button onClick={handleButtonClick} className="btn btn-sm btn-info btn-inline cart-dataset-search">Dataset search</button>
-                {isWarningVisible ?
-                    <Modal closeModal={handleCloseClick}>
-                        <ModalHeader title={<h4>Cart dataset search results</h4>} closeModal={handleCloseClick} />
-                        <ModalBody>
-                            Viewing cart dataset search results requires {MAX_SEARCHABLE_DATASETS} datasets
-                            or fewer. This cart contains {elements.length} datasets.
-                        </ModalBody>
-                        <ModalFooter
-                            closeModal={handleCloseClick}
-                        />
-                    </Modal>
-                : null}
             </React.Fragment>
         );
     }
@@ -897,10 +878,12 @@ const CartDatasetSearch = ({ elements, usedDatasetTypes }, reactContext) => {
 };
 
 CartDatasetSearch.propTypes = {
-    /** Dataset @ids in the cart */
-    elements: PropTypes.array.isRequired,
-    /** Types of datasets in `elements` as collection names e.g. "experiments" */
-    usedDatasetTypes: PropTypes.array.isRequired,
+    /** Active cart */
+    savedCartObj: PropTypes.object.isRequired,
+    /** Shared cart */
+    sharedCartObj: PropTypes.object.isRequired,
+    /** Type of cart to link to the button */
+    cartType: PropTypes.string.isRequired,
 };
 
 CartDatasetSearch.contextTypes = {
@@ -972,7 +955,7 @@ const CartTools = ({ elements, selectedTerms, selectedDatasetType, typeChangeHan
                     <CartClearButton />
                 </div>
             : null}
-            <CartDatasetSearch elements={elements} usedDatasetTypes={usedDatasetTypes} />
+            <CartDatasetSearch savedCartObj={savedCartObj} sharedCartObj={sharedCart} cartType={cartType} />
         </div>
     );
 };
@@ -1363,7 +1346,7 @@ const generateFacetTermsTemplate = () => {
  *
  * @return {promise}:
  * {
- *      datasetFiles - Array of all parital file objects in all datasets
+ *      datasetFiles - Array of all partial file objects in all datasets
  *      datasets - Array of all datasets viewable at user's access level; subset of `datasetsIds`
  * }
  */
