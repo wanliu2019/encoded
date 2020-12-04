@@ -218,7 +218,8 @@
                 "miRNA",
                 "polyadenylated mRNA",
                 "protein",
-                "RNA"
+                "RNA",
+                "capped mRNA"
             ]
         },
         "dbxrefs": {
