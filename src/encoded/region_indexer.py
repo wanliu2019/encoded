@@ -1,3 +1,4 @@
+import pytz, datetime
 import urllib3
 import io
 import gzip
@@ -33,7 +34,7 @@ from snovault.elasticsearch.interfaces import (
     INDEXER,
 )
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('snovault.elasticsearch.es_index_listener')
 
 
 # Region indexer 2.0
@@ -150,18 +151,159 @@ def encoded_regionable_datasets(request, restrict_to_assays=[]):
     return [ result['uuid'] for result in results ]
 
 
-class RegionIndexerState(IndexerState):
-    # Accepts handoff of uuids from primary indexer. Keeps track of uuids and region_indexer state by cycle.
-    def __init__(self, es, key):
-        super(RegionIndexerState, self).__init__(es,key, title='region')
-        self.files_added_set    = self.title + '_files_added'
-        self.files_dropped_set  = self.title + '_files_dropped'
+class RegionIndexerState(object):
+    
+    def __init__(self, es, index):
+        # Moved from indexer_state
+        self.es = es
+        self.index = index
+        self.title = 'region'
+        self.state_id = 'region_indexer'
+        self.todo_set = 'region_in_progress'
+        self.troubled_set = 'region_troubled'
+        self.last_set = 'region_last_cycle'
+        self.cleanup_this_cycle = [self.todo_set]
+        self.cleanup_last_cycle = [self.last_set, self.troubled_set]
+        self.override = 'reindex_region'
+        self.clock = {}
+        self._is_reindex_key = 'region_is_reindex'
+        self.is_reindexing = False
+        self.is_initial_indexing = False
+        # Pre existing init 
+        self.files_added_set    = 'region_files_added'
+        self.files_dropped_set  = 'region_files_dropped'
         self.success_set        = self.files_added_set
-        self.cleanup_last_cycle.extend([self.files_added_set,self.files_dropped_set])  # Clean up at beginning of next cycle
-        # DO NOT INHERIT! These keys are for passing on to other indexers
-        self.followup_prep_list = None                        # No followup to a following indexer
-        self.staged_cycles_list = None                        # Will take all of primary self.staged_for_regions_list
+        self.cleanup_last_cycle.extend([self.files_added_set, self.files_dropped_set])
+        self.followup_prep_list = None
+        self.staged_cycles_list = None
 
+    # Moved from indexer_state
+    def _del_is_reindex(self):
+        # Flag should not be cleared until finish_cycle function is called
+        return self.delete_objs([self._is_reindex_key])
+
+    def _get_is_reindex(self):
+        obj = self.get_obj(self._is_reindex_key)
+        return obj.get('is_reindex') is True
+
+    def _set_is_reindex(self):
+        # Flag should be set in request_reindex funciton
+        self.put_obj(self._is_reindex_key, {'is_reindex': True})
+
+    def delete_objs(self, ids, doc_type='meta'):
+        for id in ids:
+            try:
+                self.es.delete(index=self.index, doc_type=doc_type, id=id)
+            except:
+                pass
+
+    def get(self):
+        '''Returns the basic state info'''
+        return self.get_obj(self.state_id)
+
+    def get_count(self, id):
+        return self.get_obj(id).get('count',0)
+
+    def get_initial_state(self):
+        '''Useful to initialize at idle cycle'''
+        new_state = { 'title': self.state_id, 'status': 'idle'}
+        state = self.get()
+        for var in ['cycles']:
+            val = state.pop(var,None)
+            if val is not None:
+                new_state[var] = val
+        self.set_add("registered_indexers", [self.state_id])
+        return new_state
+
+    def get_list(self, id):
+        return self.get_obj(id).get('list',[])
+
+    def get_obj(self, id, doc_type='meta'):
+        try:
+            return self.es.get(index=self.index, doc_type=doc_type, id=id).get('_source',{})
+        except:
+            return {}
+
+    def log_reindex_init_state(self):
+        # Must call after priority cycle
+        if self.is_reindexing and self.is_initial_indexing:
+            log.info('%s is reindexing all', self.title)
+        elif self.is_reindexing:
+            log.info('%s is reindexing', self.title)
+        elif self.is_initial_indexing:
+            log.info('%s is initially indexing', self.title)
+    
+    def list_extend(self, id, vals):
+        list_to_extend = self.get_list(id)
+        if len(list_to_extend) > 0:
+            list_to_extend.extend(vals)
+        else:
+            list_to_extend = vals
+        self.put_list(id, list_to_extend)
+
+    def put(self, state):
+        '''Update the basic state info'''
+        errors = state.pop('errors', None)
+        state['title'] = self.state_id
+        self.put_obj(self.state_id, state)
+        if errors is not None:
+            state['errors'] = errors
+
+    def put_list(self, id, a_list):
+        return self.put_obj(id, { 'list': a_list, 'count': len(a_list) })
+   
+    def put_obj(self, id, obj, doc_type='meta'):
+        try:
+            self.es.index(index=self.index, doc_type=doc_type, id=id, body=obj)
+        except:
+            log.warn("Failed to save to es: " + id, exc_info=True)
+
+    def reindex_requested(self, request):
+        '''returns list of uuids if a reindex was requested.'''
+        override = self.get_obj(self.override)
+        if override:
+            if override.get('all_uuids', False):
+                self.delete_objs([self.override] + self.followup_lists)
+                return self.all_indexable_uuids(request)
+            else:
+                uuids =  override.get('uuids',[])
+                uuid_count = len(uuids)
+                if uuid_count > 0:
+                    if uuid_count > SEARCH_MAX:
+                        self.delete_objs([self.override] + self.followup_lists)
+                    else:
+                        self.delete_objs([self.override])
+                    return uuids
+        return None
+    
+    def set_add(self, id, vals):
+        set_to_update = set(self.get_list(id))
+        if len(set_to_update) > 0:
+            set_to_update.update(vals)
+        else:
+            set_to_update = set(vals)
+        self.put_list(id, set_to_update)
+
+    def start_clock(self, name):
+        '''Can start a named clock and use it later to figure out elapsed time'''
+        self.clock[name] = datetime.datetime.now(pytz.utc)
+
+    def start_cycle(self, uuids, state=None):
+        '''Every indexing cycle must be properly opened.'''
+        self.clock = {}
+        self.start_clock('cycle')
+        if state is None:
+            state = self.get()
+        state['cycle_started'] = datetime.datetime.now().isoformat()
+        state['status'] = 'indexing'
+        state['cycle_count'] = len(uuids)
+        self.put(state)
+        self.delete_objs(self.cleanup_last_cycle)
+        self.delete_objs(self.cleanup_this_cycle)
+        self.put_list(self.todo_set, set(uuids))
+        return state
+
+    # Pre existing functions
     def file_added(self, uuid):
         self.list_extend(self.files_added_set, [uuid])
 
@@ -279,7 +421,51 @@ class RegionIndexerState(IndexerState):
         return state
 
     def display(self, uuids=None):
-        display = super(RegionIndexerState, self).display(uuids=uuids)
+        display = {}
+        display['state'] = self.get()
+        if display['state'].get('status','') == 'indexing' and 'cycle_started' in display['state']:
+            started = datetime.datetime.strptime(display['state']['cycle_started'],'%Y-%m-%dT%H:%M:%S.%f')
+            display['state']['indexing_elapsed'] = str(datetime.datetime.now() - started)
+        display['title'] = display['state'].get('title',self.state_id)
+        display['uuids_in_progress'] = self.get_count(self.todo_set)
+        display['uuids_troubled'] = self.get_count(self.troubled_set)
+        display['uuids_last_cycle'] = self.get_count(self.last_set)
+        if self.followup_prep_list is not None:
+            display['to_be_staged_for_follow_up_indexers'] = self.get_count(self.followup_prep_list)
+        id = 'staged_for_%s_list' % (self.title)
+        display['staged_by_primary'] = self.get_count(id)
+        reindex = self.get_obj(self.override)
+        if reindex:
+            uuids = reindex.get('uuids')
+            if uuids is not None:
+                display['reindex_requested'] = uuids
+            elif reindex.get('all_uuids',False):
+                display['reindex_requested'] = 'all'
+        display['now'] = datetime.datetime.now().isoformat()
+
+        if uuids is not None:
+            uuids_to_show = []
+            uuid_list = self.get_obj(self.todo_set)
+            if not uuid_list:
+                uuids_to_show = 'No uuids indexing'
+            else:
+                uuid_start = 0
+                try:
+                    uuid_start = int(uuids)
+                except:
+                    pass
+                if uuid_start < uuid_list.get('count',0):
+                    uuid_end = uuid_start+100
+                    if uuid_start > 0:
+                        uuids_to_show.append("... skipped first %d uuids" % (uuid_start))
+                    uuids_to_show.extend(uuid_list['list'][uuid_start:uuid_end])
+                    if uuid_list.get('count',0) > uuid_end:
+                        uuids_to_show.append("another %d uuids..." % (uuid_list.get('count',0) - uuid_end))
+                elif uuid_start > 0:
+                    uuids_to_show.append("skipped past all %d uuids" % (uuid_list.get('count',0)))
+                else:
+                    uuids_to_show = 'No uuids indexing'
+            display['uuids_in_progress'] = uuids_to_show
         display['staged_to_process'] = self.get_count(self.staged_cycles_list)
         display['files_added'] = self.get_count(self.files_added_set)
         display['files_dropped'] = self.get_count(self.files_dropped_set)
@@ -300,17 +486,7 @@ def regionindexer_state_show(request):
         msg = state.request_reindex(reindex)
         if msg is not None:
             return msg
-
-    # Requested notification
-    who = request.params.get("notify")
-    bot_token = request.params.get("bot_token")
-    if who is not None or bot_token is not None:
-        notices = state.set_notices(request.host_url, who, bot_token, request.params.get("which"))
-        if notices is not None:
-            return notices
-
     display = state.display(uuids=request.params.get("uuids"))
-
     try:
         count = regions_es.count(index=RESIDENT_REGIONSET_KEY, doc_type='default').get('count',0)
         if count:
@@ -343,24 +519,11 @@ def index_regions(request):
     dry_run = request.json.get('dry_run', False)
     indexer = request.registry['region'+INDEXER]
     uuids = []
-
-
     # keeping track of state
     state = RegionIndexerState(encoded_es,encoded_INDEX)
     result = state.get_initial_state()
-
     (uuids, force) = state.get_one_cycle(request)
     state.log_reindex_init_state()
-    # Note: if reindex=all_uuids then maybe we should delete the entire index
-    # On the otherhand, that should probably be left for extreme cases done by hand
-    # curl -XDELETE http://region-search-test-v5.instance.encodedcc.org:9200/resident_datasets/
-    #if force == 'all':  # Unfortunately force is a simple boolean
-    #    try:
-    #        r = indexer.regions_es.indices.delete(index='chr*')  # Note region_es and encoded_es may be the same!
-    #        r = indexer.regions_es.indices.delete(index=self.residents_index)
-    #    except:
-    #        pass
-
     uuid_count = len(uuids)
     if uuid_count > 0 and not dry_run:
         log.info("Region indexer started on %d uuid(s)" % uuid_count)
@@ -370,14 +533,11 @@ def index_regions(request):
         result = state.finish_cycle(result, errors)
         if result['indexed'] == 0:
             log.info("Region indexer added %d file(s) from %d dataset uuids" % (result['indexed'], uuid_count))
-
-        # cycle_took: "2:31:55.543311" reindex all with force (2017-10-16ish)
-
-    state.send_notices()
     return result
 
 
 class RegionIndexer(Indexer):
+    
     def __init__(self, registry):
         super(RegionIndexer, self).__init__(registry)
         self.encoded_es    = registry[ELASTIC_SEARCH]    # yes this is self.es but we want clarity
@@ -400,6 +560,7 @@ class RegionIndexer(Indexer):
             if error is not None:
                 errors.append(error)
             if (i + 1) % 1000 == 0:
+                print('Indexing %d', i + 1)
                 log.info('Indexing %d', i + 1)
         return errors
 
