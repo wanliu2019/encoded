@@ -390,7 +390,7 @@ class App extends React.Component {
             },
             socialButtonStyle: 'big',
             languageDictionary: {
-                title: 'Log in to ENCODE',
+                title: 'Log in or Create Account',
             },
             allowedConnections: ['github', 'google-oauth2', 'facebook', 'linkedin'],
         });
