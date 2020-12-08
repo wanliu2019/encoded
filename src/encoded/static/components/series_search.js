@@ -52,7 +52,11 @@ function getSeriesData(seriesLink, fetch) {
 const SeriesSearch = (props, context) => {
     const [parsedUrl, setParsedUrl] = React.useState(url.parse(props.context['@id']));
     const [query, setQuery] = React.useState(new QueryString(parsedUrl.query));
-    const [selectedSeries, setSelectedSeries] = React.useState(query.getKeyValues('type')[0]);
+    let originalSeries = 'OrganismDevelopmentSeries';
+    if (query.getKeyValues('type')[0]) {
+        originalSeries = query.getKeyValues('type')[0];
+    }
+    const [selectedSeries, setSelectedSeries] = React.useState(originalSeries);
     const [descriptionData, setDescriptionData] = React.useState(null);
 
     const searchBase = url.parse(context.location_href).search || '';
@@ -87,7 +91,12 @@ const SeriesSearch = (props, context) => {
         getSeriesData(seriesDescriptionHref, context.fetch).then((response) => {
             setDescriptionData(response.description);
         });
-    }, [context.fetch, selectedSeries]);
+        if (!(query.getKeyValues('type')[0])) {
+            query.addKeyValue('type', originalSeries);
+            const href = `?${query.format()}`;
+            context.navigate(href);
+        }
+    }, [context, context.fetch, originalSeries, query, selectedSeries]);
 
     return (
         <div className="layout">
