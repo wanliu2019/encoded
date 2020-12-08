@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import url from 'url';
 import { Panel, PanelBody } from '../libs/ui/panel';
 import { ResultTable } from './search';
+import QueryString from '../libs/query_string';
 import * as globals from './globals';
 
 // The series search page includes the following five series
@@ -29,15 +30,6 @@ const seriesList = {
     },
 };
 
-// Find parent node link if it exists
-function nearestAncestorHref(node) {
-    let nodeVar = node;
-    while (nodeVar && !nodeVar.href) {
-        nodeVar = nodeVar.parentNode;
-    }
-    return nodeVar && nodeVar.href;
-}
-
 // Fetch data from href
 function getSeriesData(seriesLink, fetch) {
     return fetch(seriesLink, {
@@ -58,24 +50,26 @@ function getSeriesData(seriesLink, fetch) {
 // The series search page displays a table of results corresponding to a selected series
 // Buttons for each series are displayed like tabs or links
 const SeriesSearch = (props, context) => {
-    const [selectedSeries, setSeries] = React.useState('OrganismDevelopmentSeries');
-    const [seriesData, setSeriesData] = React.useState(null);
+    const [parsedUrl, setParsedUrl] = React.useState(url.parse(props.context['@id']));
+    const [query, setQuery] = React.useState(new QueryString(parsedUrl.query));
+    const [selectedSeries, setSelectedSeries] = React.useState(query.getKeyValues('type')[0]);
     const [descriptionData, setDescriptionData] = React.useState(null);
+
     const searchBase = url.parse(context.location_href).search || '';
 
     const handleClick = React.useCallback((series) => {
-        // Get series data from search
-        const seriesHref = `/search/?type=${series}`;
-        getSeriesData(seriesHref, context.fetch).then((response) => {
-            setSeries(series);
-            setSeriesData(response);
-        });
+        setParsedUrl(url.parse(props.context['@id']));
+        setQuery(new QueryString(parsedUrl.query));
+        query.deleteKeyValue('type');
+        query.addKeyValue('type', series);
+        const href = `?${query.format()}`;
+        context.navigate(href);
         // Get series description from schema
         const seriesDescriptionHref = `/profiles/${seriesList[series].schema}.json`;
         getSeriesData(seriesDescriptionHref, context.fetch).then((response) => {
             setDescriptionData(response.description);
         });
-    }, [context.fetch]);
+    }, [context, parsedUrl.query, props.context, query, setParsedUrl, setQuery]);
 
     const currentRegion = (assembly, region) => {
         if (assembly && region) {
@@ -87,26 +81,14 @@ const SeriesSearch = (props, context) => {
         return SeriesSearch.lastRegion;
     };
 
-    // When a user clicks on the page, if they click on what would generally be a link if this were a regular search page,
-    // we want to refresh the data displayed for the given series
-    const handleLinks = (e) => {
-        const clickedUrl = nearestAncestorHref(e.target);
-        if (clickedUrl && (clickedUrl.indexOf('search') > -1)) {
-            const parsedUrl = url.parse(clickedUrl);
-            e.preventDefault();
-            const seriesHref = parsedUrl.path.replace('series-search', 'search');
-            getSeriesData(seriesHref, context.fetch).then((response) => {
-                setSeriesData(response);
-            });
-        }
-    };
-
     // Select series from tab buttons
     React.useEffect(() => {
-        handleClick(selectedSeries);
-    }, [handleClick, selectedSeries]);
+        const seriesDescriptionHref = `/profiles/${seriesList[selectedSeries].schema}.json`;
+        getSeriesData(seriesDescriptionHref, context.fetch).then((response) => {
+            setDescriptionData(response.description);
+        });
+    }, [context.fetch, selectedSeries]);
 
-    /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
     return (
         <div className="layout">
             <div className="layout__block layout__block--100">
@@ -133,18 +115,16 @@ const SeriesSearch = (props, context) => {
                     </div>
                     <div className="tab-body">
                         <div className="tab-description">{descriptionData}</div>
-                        <div className="series-wrapper" onClick={e => handleLinks(e)} >
+                        <div className="series-wrapper">
                             <Panel>
                                 <PanelBody>
-                                    {seriesData ?
-                                        <ResultTable
-                                            context={seriesData}
-                                            searchBase={searchBase}
-                                            onChange={context.navigate}
-                                            currentRegion={currentRegion}
-                                            seriesFlag
-                                        />
-                                    : null}
+                                    <ResultTable
+                                        {...props}
+                                        searchBase={searchBase}
+                                        onChange={context.navigate}
+                                        currentRegion={currentRegion}
+                                        seriesFlag
+                                    />
                                 </PanelBody>
                             </Panel>
                         </div>
@@ -153,7 +133,10 @@ const SeriesSearch = (props, context) => {
             </div>
         </div>
     );
-    /* eslint-enable jsx-a11y/click-events-have-key-events */
+};
+
+SeriesSearch.propTypes = {
+    context: PropTypes.object.isRequired,
 };
 
 SeriesSearch.contextTypes = {
